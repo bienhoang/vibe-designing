@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler } from "./helpers";
 
 // ─── Schemas ─────────────────────────────────────────────────────
@@ -32,59 +31,15 @@ const insertItem = z.object({
   index: z.coerce.number().optional().describe("Index to insert at (0=first). Omit to append."),
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "move_node",
-    "Move nodes to new positions. Batch: pass multiple items.",
-    { items: flexJson(z.array(moveItem)).describe("Array of {nodeId, x, y}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("move_node", params)); }
-      catch (e) { return mcpError("Error moving nodes", e); }
-    }
-  );
-
-  server.tool(
-    "resize_node",
-    "Resize nodes. Batch: pass multiple items.",
-    { items: flexJson(z.array(resizeItem)).describe("Array of {nodeId, width, height}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("resize_node", params)); }
-      catch (e) { return mcpError("Error resizing nodes", e); }
-    }
-  );
-
-  server.tool(
-    "delete_node",
-    "Delete nodes. Batch: pass multiple items.",
-    { items: flexJson(z.array(deleteItem)).describe("Array of {nodeId}") },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("delete_node", params)); }
-      catch (e) { return mcpError("Error deleting nodes", e); }
-    }
-  );
-
-  server.tool(
-    "clone_node",
-    "Clone nodes. Batch: pass multiple items.",
-    { items: flexJson(z.array(cloneItem)).describe("Array of {nodeId, x?, y?}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("clone_node", params)); }
-      catch (e) { return mcpError("Error cloning nodes", e); }
-    }
-  );
-
-  server.tool(
-    "insert_child",
-    "Move nodes into a parent at a specific index (reorder/reparent). Batch: pass multiple items.",
-    { items: flexJson(z.array(insertItem)).describe("Array of {parentId, childId, index?}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("insert_child", params)); }
-      catch (e) { return mcpError("Error inserting children", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "move_node", description: "Move nodes to new positions. Batch: pass multiple items.", schema: { items: flexJson(z.array(moveItem)).describe("Array of {nodeId, x, y}"), depth: S.depth } },
+  { name: "resize_node", description: "Resize nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(resizeItem)).describe("Array of {nodeId, width, height}"), depth: S.depth } },
+  { name: "delete_node", description: "Delete nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(deleteItem)).describe("Array of {nodeId}") } },
+  { name: "clone_node", description: "Clone nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(cloneItem)).describe("Array of {nodeId, x?, y?}"), depth: S.depth } },
+  { name: "insert_child", description: "Move nodes into a parent at a specific index (reorder/reparent). Batch: pass multiple items.", schema: { items: flexJson(z.array(insertItem)).describe("Array of {parentId, childId, index?}"), depth: S.depth } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

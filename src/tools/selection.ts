@@ -1,68 +1,39 @@
 import { z } from "zod";
 import { flexJson } from "../utils/coercion";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "get_selection",
-    "Get information about the current selection in Figma",
-    {},
-    async () => {
-      try { return mcpJson(await sendCommand("get_selection")); }
-      catch (e) { return mcpError("Error getting selection", e); }
-    }
-  );
-
-  server.tool(
-    "read_my_design",
-    "Read the nodes the user has selected in Figma (or set via set_selection). Returns nothing if no selection exists — ask the user to select something, or use get_node_info with specific node IDs. Use depth to control child traversal.",
-    { depth: z.coerce.number().optional().describe("Levels of children to recurse. 0=selection only, -1 or omit for unlimited.") },
-    async ({ depth }: any) => {
-      try { return mcpJson(await sendCommand("read_my_design", { depth })); }
-      catch (e) { return mcpError("Error reading design", e); }
-    }
-  );
-
-  server.tool(
-    "set_selection",
-    "Set selection to nodes and scroll viewport to show them. Also works as focus (single node).",
-    {
-      nodeIds: flexJson(z.array(z.string())).describe('Array of node IDs to select. Example: ["1:2","1:3"]'),
-    },
-    async ({ nodeIds }: any) => {
-      try { return mcpJson(await sendCommand("set_selection", { nodeIds })); }
-      catch (e) { return mcpError("Error setting selection", e); }
-    }
-  );
-
-  server.tool(
-    "zoom_into_view",
-    "Zoom the viewport to fit specific nodes (like pressing Shift+1)",
-    {
-      nodeIds: flexJson(z.array(z.string())).describe("Array of node IDs to zoom into"),
-    },
-    async ({ nodeIds }: any) => {
-      try { return mcpJson(await sendCommand("zoom_into_view", { nodeIds })); }
-      catch (e) { return mcpError("Error zooming", e); }
-    }
-  );
-
-  server.tool(
-    "set_viewport",
-    "Set viewport center position and/or zoom level",
-    {
+export const mcpTools: ToolDefinition[] = [
+  {
+    name: "get_selection",
+    description: "Get information about the current selection in Figma",
+    schema: {},
+  },
+  {
+    name: "read_my_design",
+    description: "Read the nodes the user has selected in Figma (or set via set_selection). Returns nothing if no selection exists — ask the user to select something, or use get_node_info with specific node IDs. Use depth to control child traversal.",
+    schema: { depth: z.coerce.number().optional().describe("Levels of children to recurse. 0=selection only, -1 or omit for unlimited.") },
+  },
+  {
+    name: "set_selection",
+    description: "Set selection to nodes and scroll viewport to show them. Also works as focus (single node).",
+    schema: { nodeIds: flexJson(z.array(z.string())).describe('Array of node IDs to select. Example: ["1:2","1:3"]') },
+  },
+  {
+    name: "zoom_into_view",
+    description: "Zoom the viewport to fit specific nodes (like pressing Shift+1)",
+    schema: { nodeIds: flexJson(z.array(z.string())).describe("Array of node IDs to zoom into") },
+  },
+  {
+    name: "set_viewport",
+    description: "Set viewport center position and/or zoom level",
+    schema: {
       center: flexJson(z.object({ x: z.coerce.number(), y: z.coerce.number() })).optional().describe("Viewport center point. Omit to keep current center."),
       zoom: z.coerce.number().optional().describe("Zoom level (1 = 100%). Omit to keep current zoom."),
     },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_viewport", params)); }
-      catch (e) { return mcpError("Error setting viewport", e); }
-    }
-  );
-}
+  },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

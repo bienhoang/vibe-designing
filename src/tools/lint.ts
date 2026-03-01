@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson, flexBool } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler } from "./helpers";
 import { rgbaToHex } from "../utils/color";
 import {
@@ -38,57 +37,13 @@ const lintRules = z.enum([
   "all",                     // Run all rules (including WCAG)
 ]);
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "lint_node",
-    "Run design linter on a node tree. Returns issues grouped by category with affected node IDs and fix instructions. Lint child nodes individually for large trees.",
-    {
-      nodeId: z.string().optional().describe("Node ID to lint. Omit to lint current selection."),
-      rules: flexJson(z.array(lintRules)).optional().describe('Rules to run. Default: ["all"]. Options: no-autolayout, shape-instead-of-frame, hardcoded-color, no-text-style, fixed-in-autolayout, default-name, empty-container, stale-text-name, no-text-property, all, wcag-contrast, wcag-contrast-enhanced, wcag-non-text-contrast, wcag-target-size, wcag-text-size, wcag-line-height, wcag'),
-      maxDepth: z.coerce.number().optional().describe("Max depth to recurse (default: 10)"),
-      maxFindings: z.coerce.number().optional().describe("Stop after N findings (default: 50)"),
-    },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("lint_node", params)); }
-      catch (e) { return mcpError("Error running lint", e); }
-    }
-  );
-
-  server.tool(
-    "lint_fix_autolayout",
-    "Auto-fix: convert frames with multiple children to auto-layout. Takes node IDs from lint_node 'no-autolayout' results.",
-    {
-      items: flexJson(z.array(z.object({
-        nodeId: S.nodeId,
-        layoutMode: z.enum(["HORIZONTAL", "VERTICAL"]).optional().describe("Layout direction (default: auto-detect based on child positions)"),
-        itemSpacing: z.coerce.number().optional().describe("Spacing between children (default: 0)"),
-      }))).describe("Array of frames to convert to auto-layout"),
-      depth: S.depth,
-    },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("lint_fix_autolayout", params)); }
-      catch (e) { return mcpError("Error fixing auto-layout", e); }
-    }
-  );
-
-  server.tool(
-    "lint_fix_replace_shape_with_frame",
-    "Auto-fix: replace shapes with frames preserving visual properties. Overlapping siblings are re-parented into the new frame. Use after lint_node 'shape-instead-of-frame' results.",
-    {
-      items: flexJson(z.array(z.object({
-        nodeId: S.nodeId,
-        adoptChildren: flexBool(z.boolean()).optional().describe("Re-parent overlapping siblings into the new frame (default: true)"),
-      }))).describe("Array of shapes to convert to frames"),
-      depth: S.depth,
-    },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("lint_fix_replace_shape_with_frame", params)); }
-      catch (e) { return mcpError("Error converting shapes to frames", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "lint_node", description: "Run design linter on a node tree. Returns issues grouped by category with affected node IDs and fix instructions. Lint child nodes individually for large trees.", schema: { nodeId: z.string().optional().describe("Node ID to lint. Omit to lint current selection."), rules: flexJson(z.array(lintRules)).optional().describe('Rules to run. Default: ["all"]. Options: no-autolayout, shape-instead-of-frame, hardcoded-color, no-text-style, fixed-in-autolayout, default-name, empty-container, stale-text-name, no-text-property, all, wcag-contrast, wcag-contrast-enhanced, wcag-non-text-contrast, wcag-target-size, wcag-text-size, wcag-line-height, wcag'), maxDepth: z.coerce.number().optional().describe("Max depth to recurse (default: 10)"), maxFindings: z.coerce.number().optional().describe("Stop after N findings (default: 50)") } },
+  { name: "lint_fix_autolayout", description: "Auto-fix: convert frames with multiple children to auto-layout. Takes node IDs from lint_node 'no-autolayout' results.", schema: { items: flexJson(z.array(z.object({ nodeId: S.nodeId, layoutMode: z.enum(["HORIZONTAL", "VERTICAL"]).optional().describe("Layout direction (default: auto-detect based on child positions)"), itemSpacing: z.coerce.number().optional().describe("Spacing between children (default: 0)") }))).describe("Array of frames to convert to auto-layout"), depth: S.depth } },
+  { name: "lint_fix_replace_shape_with_frame", description: "Auto-fix: replace shapes with frames preserving visual properties. Overlapping siblings are re-parented into the new frame. Use after lint_node 'shape-instead-of-frame' results.", schema: { items: flexJson(z.array(z.object({ nodeId: S.nodeId, adoptChildren: flexBool(z.boolean()).optional().describe("Re-parent overlapping siblings into the new frame (default: true)") }))).describe("Array of shapes to convert to frames"), depth: S.depth } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

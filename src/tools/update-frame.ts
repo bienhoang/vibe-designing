@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler } from "./helpers";
 
 // ─── Schema ──────────────────────────────────────────────────────
@@ -23,19 +22,11 @@ const updateFrameItem = z.object({
   counterAxisSpacing: z.coerce.number().optional().describe("Spacing between wrapped rows/columns (WRAP only)"),
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "update_frame",
-    "Update layout properties on frames. Combines layout mode, padding, alignment, sizing, and spacing in one call. Batch: pass multiple items.",
-    { items: flexJson(z.array(updateFrameItem)).describe("Array of {nodeId, ...layout properties}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("update_frame", params)); }
-      catch (e) { return mcpError("Error updating frame", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "update_frame", description: "Update layout properties on frames. Combines layout mode, padding, alignment, sizing, and spacing in one call. Batch: pass multiple items.", schema: { items: flexJson(z.array(updateFrameItem)).describe("Array of {nodeId, ...layout properties}"), depth: S.depth } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

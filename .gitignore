@@ -2,6 +2,7 @@ node_modules/
 .cursor/
 .env
 dist/
+src/tools/_*.generated.ts
 .idea/
 certs/
 plugin/

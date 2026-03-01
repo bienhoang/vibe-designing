@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson, flexBool } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler, appendToParent, solidPaint, styleNotFoundHint, suggestStyleForColor, findVariableById } from "./helpers";
 
 // ─── Schemas ─────────────────────────────────────────────────────
@@ -63,110 +62,19 @@ const instanceItem = z.object({
   parentId: S.parentId,
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "create_component",
-    "Create components in Figma. Same layout params as create_frame. Name with 'Property=Value' pattern (e.g. 'Size=Small') if you plan to combine_as_variants later. Batch: pass multiple items.",
-    { items: flexJson(z.array(componentItem)).describe("Array of components to create"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_component", params)); }
-      catch (e) { return mcpError("Error creating component", e); }
-    }
-  );
-
-  server.tool(
-    "create_component_from_node",
-    "Convert existing nodes into components. Batch: pass multiple items.",
-    { items: flexJson(z.array(fromNodeItem)).describe("Array of {nodeId}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_component_from_node", params)); }
-      catch (e) { return mcpError("Error creating component from node", e); }
-    }
-  );
-
-  server.tool(
-    "combine_as_variants",
-    "Combine components into variant sets. Name components with 'Property=Value' pattern (e.g. 'Style=Primary', 'Size=Large') BEFORE combining — Figma derives variant properties from component names. Avoid slashes in names. The resulting set is placed in the components' shared parent (or page root if parents differ). Batch: pass multiple items.",
-    { items: flexJson(z.array(combineItem)).describe("Array of {componentIds, name?}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("combine_as_variants", params)); }
-      catch (e) { return mcpError("Error combining variants", e); }
-    }
-  );
-
-  server.tool(
-    "add_component_property",
-    "Add properties to components. Batch: pass multiple items.",
-    { items: flexJson(z.array(propItem)).describe("Array of {componentId, propertyName, type, defaultValue, preferredValues?}") },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("add_component_property", params)); }
-      catch (e) { return mcpError("Error adding component property", e); }
-    }
-  );
-
-  server.tool(
-    "create_instance_from_local",
-    "Create instances of local components. For COMPONENT_SET, use variantProperties to pick a specific variant (e.g. {\"Style\":\"Secondary\"}). Batch: pass multiple items.",
-    { items: flexJson(z.array(instanceItem)).describe("Array of {componentId, x?, y?, parentId?}") },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_instance_from_local", params)); }
-      catch (e) { return mcpError("Error creating instance", e); }
-    }
-  );
-
-  server.tool(
-    "search_components",
-    "Search local components and component sets across all pages. Returns component id, name, and which page it lives on.",
-    {
-      query: z.string().optional().describe("Filter by name (case-insensitive substring). Omit to list all."),
-      setsOnly: flexBool(z.boolean()).optional().describe("If true, return only COMPONENT_SET nodes"),
-      limit: z.coerce.number().optional().describe("Max results (default 100)"),
-      offset: z.coerce.number().optional().describe("Skip N results (default 0)"),
-    },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("search_components", params)); }
-      catch (e) { return mcpError("Error searching components", e); }
-    }
-  );
-
-  server.tool(
-    "get_component_by_id",
-    "Get detailed component info including property definitions and variants.",
-    {
-      componentId: z.string().describe("Component node ID"),
-      includeChildren: flexBool(z.boolean()).optional().describe("For COMPONENT_SETs: include variant children (default false)"),
-    },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("get_component_by_id", params)); }
-      catch (e) { return mcpError("Error getting component", e); }
-    }
-  );
-
-  server.tool(
-    "get_instance_overrides",
-    "Get override properties from a component instance.",
-    { nodeId: z.string().optional().describe("Instance node ID (uses selection if omitted)") },
-    async ({ nodeId }: any) => {
-      try { return mcpJson(await sendCommand("get_instance_overrides", { instanceNodeId: nodeId || null })); }
-      catch (e) { return mcpError("Error getting overrides", e); }
-    }
-  );
-
-  server.tool(
-    "set_instance_properties",
-    "Set component property values on instances (e.g. text, boolean, instance swap). Use get_component_by_id to discover property keys. Batch: pass multiple items.",
-    { items: flexJson(z.array(z.object({
-      nodeId: S.nodeId,
-      properties: flexJson(z.record(z.string(), z.union([z.string(), z.boolean()]))).describe('Property key→value map, e.g. {"Label#1:0":"Click Me"}'),
-    }))).describe("Array of {nodeId, properties}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_instance_properties", params)); }
-      catch (e) { return mcpError("Error setting instance properties", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "create_component", description: "Create components in Figma. Same layout params as create_frame. Name with 'Property=Value' pattern (e.g. 'Size=Small') if you plan to combine_as_variants later. Batch: pass multiple items.", schema: { items: flexJson(z.array(componentItem)).describe("Array of components to create"), depth: S.depth } },
+  { name: "create_component_from_node", description: "Convert existing nodes into components. Batch: pass multiple items.", schema: { items: flexJson(z.array(fromNodeItem)).describe("Array of {nodeId}"), depth: S.depth } },
+  { name: "combine_as_variants", description: "Combine components into variant sets. Name components with 'Property=Value' pattern (e.g. 'Style=Primary', 'Size=Large') BEFORE combining — Figma derives variant properties from component names. Avoid slashes in names. The resulting set is placed in the components' shared parent (or page root if parents differ). Batch: pass multiple items.", schema: { items: flexJson(z.array(combineItem)).describe("Array of {componentIds, name?}"), depth: S.depth } },
+  { name: "add_component_property", description: "Add properties to components. Batch: pass multiple items.", schema: { items: flexJson(z.array(propItem)).describe("Array of {componentId, propertyName, type, defaultValue, preferredValues?}") } },
+  { name: "create_instance_from_local", description: "Create instances of local components. For COMPONENT_SET, use variantProperties to pick a specific variant (e.g. {\"Style\":\"Secondary\"}). Batch: pass multiple items.", schema: { items: flexJson(z.array(instanceItem)).describe("Array of {componentId, x?, y?, parentId?}") } },
+  { name: "search_components", description: "Search local components and component sets across all pages. Returns component id, name, and which page it lives on.", schema: { query: z.string().optional().describe("Filter by name (case-insensitive substring). Omit to list all."), setsOnly: flexBool(z.boolean()).optional().describe("If true, return only COMPONENT_SET nodes"), limit: z.coerce.number().optional().describe("Max results (default 100)"), offset: z.coerce.number().optional().describe("Skip N results (default 0)") } },
+  { name: "get_component_by_id", description: "Get detailed component info including property definitions and variants.", schema: { componentId: z.string().describe("Component node ID"), includeChildren: flexBool(z.boolean()).optional().describe("For COMPONENT_SETs: include variant children (default false)") } },
+  { name: "get_instance_overrides", description: "Get override properties from a component instance.", schema: { nodeId: z.string().optional().describe("Instance node ID (uses selection if omitted)") } },
+  { name: "set_instance_properties", description: "Set component property values on instances (e.g. text, boolean, instance swap). Use get_component_by_id to discover property keys. Batch: pass multiple items.", schema: { items: flexJson(z.array(z.object({ nodeId: S.nodeId, properties: flexJson(z.record(z.string(), z.union([z.string(), z.boolean()]))).describe('Property key→value map, e.g. {"Label#1:0":"Click Me"}') }))).describe("Array of {nodeId, properties}"), depth: S.depth } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson, flexBool, flexNum } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler } from "./helpers";
 
 
@@ -66,99 +65,19 @@ const applyStyleItem = z.object({
   styleType: z.preprocess((v) => typeof v === "string" ? v.toLowerCase() : v, z.enum(["fill", "stroke", "text", "effect"])).describe("Type of style: fill, stroke, text, or effect (case-insensitive)"),
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "get_styles",
-    "List local styles (paint, text, effect, grid). Returns IDs and names only.",
-    {},
-    async () => {
-      try { return mcpJson(await sendCommand("get_styles")); }
-      catch (e) { return mcpError("Error getting styles", e); }
-    }
-  );
-
-  server.tool(
-    "get_style_by_id",
-    "Get detailed style info by ID. Returns full paint/font/effect/grid details.",
-    { styleId: z.string().describe("Style ID") },
-    async ({ styleId }: any) => {
-      try { return mcpJson(await sendCommand("get_style_by_id", { styleId })); }
-      catch (e) { return mcpError("Error getting style", e); }
-    }
-  );
-
-  server.tool(
-    "remove_style",
-    "Delete a style by ID.",
-    { styleId: z.string().describe("Style ID to remove") },
-    async ({ styleId }: any) => {
-      try { return mcpJson(await sendCommand("remove_style", { styleId })); }
-      catch (e) { return mcpError("Error removing style", e); }
-    }
-  );
-
-  server.tool(
-    "create_paint_style",
-    "Create color/paint styles. Batch: pass multiple items.",
-    { items: flexJson(z.array(paintStyleItem)).describe("Array of {name, color}") },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_paint_style", params)); }
-      catch (e) { return mcpError("Error creating paint style", e); }
-    }
-  );
-
-  server.tool(
-    "create_text_style",
-    "Create text styles. Batch: pass multiple items.",
-    { items: flexJson(z.array(textStyleItem)).describe("Array of text style definitions") },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_text_style", params)); }
-      catch (e) { return mcpError("Error creating text style", e); }
-    }
-  );
-
-  server.tool(
-    "create_effect_style",
-    "Create effect styles (shadows, blurs). Batch: pass multiple items.",
-    { items: flexJson(z.array(effectStyleItem)).describe("Array of {name, effects}") },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_effect_style", params)); }
-      catch (e) { return mcpError("Error creating effect style", e); }
-    }
-  );
-
-  server.tool(
-    "apply_style_to_node",
-    "Apply a style to nodes by ID or name. Use styleName for convenience (case-insensitive). Batch: pass multiple items.",
-    { items: flexJson(z.array(applyStyleItem)).describe("Array of {nodeId, styleId?, styleName?, styleType}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("apply_style_to_node", params)); }
-      catch (e) { return mcpError("Error applying style", e); }
-    }
-  );
-
-  server.tool(
-    "update_paint_style",
-    "Update paint style color/name by ID or name. Changes propagate to all nodes using the style. Batch: pass multiple items.",
-    { items: flexJson(z.array(updatePaintStyleItem)).describe("Array of {id, name?, color?}") },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("update_paint_style", params)); }
-      catch (e) { return mcpError("Error updating paint style", e); }
-    }
-  );
-
-  server.tool(
-    "update_text_style",
-    "Update text style properties by ID or name. Changes propagate to all nodes using the style. Batch: pass multiple items.",
-    { items: flexJson(z.array(updateTextStyleItem)).describe("Array of {id, name?, fontSize?, fontFamily?, ...}") },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("update_text_style", params)); }
-      catch (e) { return mcpError("Error updating text style", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "get_styles", description: "List local styles (paint, text, effect, grid). Returns IDs and names only.", schema: {} },
+  { name: "get_style_by_id", description: "Get detailed style info by ID. Returns full paint/font/effect/grid details.", schema: { styleId: z.string().describe("Style ID") } },
+  { name: "remove_style", description: "Delete a style by ID.", schema: { styleId: z.string().describe("Style ID to remove") } },
+  { name: "create_paint_style", description: "Create color/paint styles. Batch: pass multiple items.", schema: { items: flexJson(z.array(paintStyleItem)).describe("Array of {name, color}") } },
+  { name: "create_text_style", description: "Create text styles. Batch: pass multiple items.", schema: { items: flexJson(z.array(textStyleItem)).describe("Array of text style definitions") } },
+  { name: "create_effect_style", description: "Create effect styles (shadows, blurs). Batch: pass multiple items.", schema: { items: flexJson(z.array(effectStyleItem)).describe("Array of {name, effects}") } },
+  { name: "apply_style_to_node", description: "Apply a style to nodes by ID or name. Use styleName for convenience (case-insensitive). Batch: pass multiple items.", schema: { items: flexJson(z.array(applyStyleItem)).describe("Array of {nodeId, styleId?, styleName?, styleType}"), depth: S.depth } },
+  { name: "update_paint_style", description: "Update paint style color/name by ID or name. Changes propagate to all nodes using the style. Batch: pass multiple items.", schema: { items: flexJson(z.array(updatePaintStyleItem)).describe("Array of {id, name?, color?}") } },
+  { name: "update_text_style", description: "Update text style properties by ID or name. Changes propagate to all nodes using the style. Batch: pass multiple items.", schema: { items: flexJson(z.array(updateTextStyleItem)).describe("Array of {id, name?, fontSize?, fontFamily?, ...}") } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

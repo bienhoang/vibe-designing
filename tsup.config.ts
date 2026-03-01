@@ -15,6 +15,17 @@ export default defineConfig([
     splitting: false,
     bundle: true,
   },
+  // Standalone Tunnel → dist/tunnel.js (for Docker)
+  {
+    entry: { tunnel: 'src/server/tunnel-standalone.ts' },
+    format: ['esm'],
+    outDir: 'dist',
+    target: 'node18',
+    sourcemap: true,
+    minify: false,
+    splitting: false,
+    bundle: true,
+  },
   // Figma Plugin → plugin/code.js (IIFE for Figma sandbox)
   {
     entry: ['src/plugin/code.ts'],

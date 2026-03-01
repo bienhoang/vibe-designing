@@ -1,42 +1,29 @@
 import { z } from "zod";
 import { flexJson, flexBool } from "../utils/coercion";
 import { serializeNode, DEFAULT_NODE_BUDGET } from "../utils/serialize-node";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "get_node_info",
-    "Get detailed information about one or more nodes. Always pass an array of IDs. Use `fields` to select only the properties you need (reduces context size).",
-    {
+export const mcpTools: ToolDefinition[] = [
+  {
+    name: "get_node_info",
+    description: "Get detailed information about one or more nodes. Always pass an array of IDs. Use `fields` to select only the properties you need (reduces context size).",
+    schema: {
       nodeIds: flexJson(z.array(z.string())).describe('Array of node IDs. Example: ["1:2","1:3"]'),
       depth: z.coerce.number().optional().describe("Child recursion depth (default: unlimited). 0=stubs only."),
       fields: flexJson(z.array(z.string())).optional().describe('Whitelist of property names to include. Always includes id, name, type. Example: ["absoluteBoundingBox","layoutMode","fills"]. Omit to return all properties.'),
     },
-    async (params: any) => {
-      try {
-        const result = await sendCommand("get_node_info", params);
-        return mcpJson(result);
-      } catch (e) { return mcpError("Error getting node info", e); }
-    }
-  );
-
-  server.tool(
-    "get_node_css",
-    "Get CSS properties for a node (useful for dev handoff)",
-    { nodeId: z.string().describe("The node ID to get CSS for") },
-    async ({ nodeId }: any) => {
-      try { return mcpJson(await sendCommand("get_node_css", { nodeId })); }
-      catch (e) { return mcpError("Error getting CSS", e); }
-    }
-  );
-
-  server.tool(
-    "search_nodes",
-    "Search for nodes by layer name and/or type. Searches current page only — use set_current_page to switch pages first. Matches layer names (text nodes are often auto-named from their content). Returns paginated results.",
-    {
+  },
+  {
+    name: "get_node_css",
+    description: "Get CSS properties for a node (useful for dev handoff)",
+    schema: { nodeId: z.string().describe("The node ID to get CSS for") },
+  },
+  {
+    name: "search_nodes",
+    description: "Search for nodes by layer name and/or type. Searches current page only — use set_current_page to switch pages first. Matches layer names (text nodes are often auto-named from their content). Returns paginated results.",
+    schema: {
       query: z.string().optional().describe("Name search (case-insensitive substring). Omit to match all names."),
       types: flexJson(z.array(z.string())).optional().describe('Filter by types. Example: ["FRAME","TEXT"]. Omit to match all types.'),
       scopeNodeId: z.string().optional().describe("Node ID to search within (defaults to current page)"),
@@ -44,30 +31,18 @@ export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) 
       limit: z.coerce.number().optional().describe("Max results (default 50)"),
       offset: z.coerce.number().optional().describe("Skip N results for pagination (default 0)"),
     },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("search_nodes", params)); }
-      catch (e) { return mcpError("Error searching nodes", e); }
-    }
-  );
-
-  server.tool(
-    "export_node_as_image",
-    "Export a node as an image from Figma",
-    {
+  },
+  {
+    name: "export_node_as_image",
+    description: "Export a node as an image from Figma",
+    schema: {
       nodeId: z.string().describe("The node ID to export"),
       format: z.enum(["PNG", "JPG", "SVG", "PDF"]).optional().describe("Export format (default: PNG)"),
       scale: z.coerce.number().positive().optional().describe("Export scale (default: 1)"),
     },
-    async ({ nodeId, format, scale }: any) => {
-      try {
-        const result = await sendCommand("export_node_as_image", { nodeId, format, scale }) as any;
-        return {
-          content: [{ type: "image", data: result.imageData, mimeType: result.mimeType || "image/png" }],
-        };
-      } catch (e) { return mcpError("Error exporting image", e); }
-    }
-  );
-}
+    responseType: "image",
+  },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

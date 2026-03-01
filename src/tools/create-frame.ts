@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler, appendToParent, solidPaint, styleNotFoundHint, suggestStyleForColor, findVariableById } from "./helpers";
 import { looksInteractive } from "../utils/wcag";
 
@@ -53,29 +52,12 @@ const autoLayoutItem = z.object({
   layoutWrap: z.enum(["NO_WRAP", "WRAP"]).optional(),
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "create_frame",
-    "Create frames in Figma. Supports batch. Prefer fillStyleName or fillVariableId over hardcoded fillColor for design token consistency.",
-    { items: flexJson(z.array(frameItem)).describe("Array of frames to create"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_frame", params)); }
-      catch (e) { return mcpError("Error creating frames", e); }
-    }
-  );
-
-  server.tool(
-    "create_auto_layout",
-    "Wrap existing nodes in an auto-layout frame. One call replaces create_frame + update_frame + insert_child × N.",
-    { items: flexJson(z.array(autoLayoutItem)).describe("Array of auto-layout wraps to perform"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_auto_layout", params)); }
-      catch (e) { return mcpError("Error creating auto layout", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "create_frame", description: "Create frames in Figma. Supports batch. Prefer fillStyleName or fillVariableId over hardcoded fillColor for design token consistency.", schema: { items: flexJson(z.array(frameItem)).describe("Array of frames to create"), depth: S.depth } },
+  { name: "create_auto_layout", description: "Wrap existing nodes in an auto-layout frame. One call replaces create_frame + update_frame + insert_child × N.", schema: { items: flexJson(z.array(autoLayoutItem)).describe("Array of auto-layout wraps to perform"), depth: S.depth } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

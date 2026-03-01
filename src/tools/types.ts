@@ -1,10 +1,27 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { z } from "zod";
 
 /** Function signature for sending commands to Figma via WebSocket */
 export type SendCommandFn = (command: string, params?: unknown, timeoutMs?: number) => Promise<unknown>;
 
 /** Re-export McpServer type for tool files */
 export type { McpServer };
+
+/** Declarative MCP tool definition. Exported as mcpTools[] from each tool module. */
+export interface ToolDefinition {
+  /** MCP tool name (snake_case) */
+  name: string;
+  /** MCP tool description shown to AI agents */
+  description: string;
+  /** Zod schema object — keys become tool parameters */
+  schema: Record<string, z.ZodType>;
+  /** Figma command name if different from MCP tool name (defaults to name) */
+  commandName?: string;
+  /** Override default 30s timeout (milliseconds) */
+  timeoutMs?: number;
+  /** When "image", auto-wraps response as MCP image content instead of JSON text */
+  responseType?: "image";
+}
 
 /** Standard batch result from Figma handlers */
 export interface BatchResult<T = any> {

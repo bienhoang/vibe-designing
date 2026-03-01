@@ -1,7 +1,7 @@
 {
   "name": "@bienhoang/vibe-designing",
   "description": "Vibe Designing — AI-powered MCP bridge for designing in Figma.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "MIT",
   "author": "bienhoang <https://github.com/bienhoang>",
   "homepage": "https://github.com/bienhoang/vibe-designing",
@@ -30,8 +30,10 @@
   "type": "module",
   "scripts": {
     "start": "node dist/mcp.js",
-    "socket": "tsx packages/tunnel/src/index.ts",
+    "socket": "tsx src/server/tunnel-standalone.ts",
     "setup": "./scripts/setup.sh",
+    "generate": "tsx scripts/generate-registries.ts",
+    "prebuild": "npm run generate",
     "build": "tsup",
     "build:watch": "tsup --watch",
     "dev": "npm run build:watch",

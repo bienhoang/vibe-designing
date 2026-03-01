@@ -7,7 +7,10 @@ import WebSocket from "ws";
 import { v4 as uuidv4 } from "uuid";
 import { readFileSync } from "fs";
 import { join, basename } from "path";
-import { registerAllTools } from "../tools/mcp-registry";
+import { registerAllTools } from "../tools/_mcp-registry.generated";
+import { createTunnelServer } from "./tunnel";
+import { findAvailablePort } from "./port-scanner";
+import { runSetup } from "./cli-setup";
 
 // Read version — works with both tsx (source) and node (compiled dist/)
 let VIBE_DESIGNING_VERSION = "0.0.0";
@@ -378,10 +381,13 @@ registerAllTools(server, sendCommandToFigma);
 
 // ─── Start ───────────────────────────────────────────────────────
 
+let tunnel: ReturnType<typeof createTunnelServer> | null = null;
+
 function cleanup() {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.close(1000, "MCP server shutting down");
   }
+  if (tunnel) tunnel.close();
 }
 
 process.on("SIGINT", () => { cleanup(); process.exit(0); });
@@ -389,8 +395,27 @@ process.on("SIGTERM", () => { cleanup(); process.exit(0); });
 process.on("exit", cleanup);
 
 async function main() {
+  // CLI: --setup downloads plugin and exits
+  if (args.includes("--setup")) {
+    await runSetup();
+    process.exit(0);
+  }
+
+  // Determine tunnel port
+  let tunnelPort = activePort;
+  if (!portArg && !process.env.VIBE_DESIGNING_PORT) {
+    tunnelPort = await findAvailablePort();
+    activePort = tunnelPort;
+  }
+
+  // Start embedded tunnel
+  tunnel = createTunnelServer();
+  await tunnel.listen(tunnelPort);
+  logger.info(`Embedded tunnel started on port ${tunnelPort}`);
+
+  // Connect WS client to own tunnel
   try {
-    connectToFigma();
+    connectToFigma(tunnelPort);
   } catch (error) {
     logger.warn(`Could not connect to Figma initially: ${error instanceof Error ? error.message : String(error)}`);
     logger.warn("Will try to connect when the first command is sent");

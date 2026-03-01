@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler, appendToParent } from "./helpers";
 
 // ─── Schemas ─────────────────────────────────────────────────────
@@ -57,69 +56,16 @@ const boolOpItem = z.object({
   name: z.string().optional().describe("Name for the result. Omit to auto-generate."),
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "create_rectangle",
-    "Create rectangles (leaf nodes — cannot have children). For containers/cards/panels, use create_frame instead. Batch: pass multiple items.",
-    { items: flexJson(z.array(rectItem)).describe("Array of rectangles to create"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_rectangle", params)); }
-      catch (e) { return mcpError("Error creating rectangles", e); }
-    }
-  );
-
-  server.tool(
-    "create_ellipse",
-    "Create ellipses (leaf nodes — cannot have children). For circular containers, use create_frame with cornerRadius instead. Batch: pass multiple items.",
-    { items: flexJson(z.array(ellipseItem)).describe("Array of ellipses to create"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_ellipse", params)); }
-      catch (e) { return mcpError("Error creating ellipses", e); }
-    }
-  );
-
-  server.tool(
-    "create_line",
-    "Create lines (leaf nodes — cannot have children). For dividers inside layouts, use create_frame with a thin height and fill color instead. Batch: pass multiple items.",
-    { items: flexJson(z.array(lineItem)).describe("Array of lines to create"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_line", params)); }
-      catch (e) { return mcpError("Error creating lines", e); }
-    }
-  );
-
-  server.tool(
-    "create_section",
-    "Create section nodes to organize content on the canvas.",
-    { items: flexJson(z.array(sectionItem)).describe("Array of sections to create"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_section", params)); }
-      catch (e) { return mcpError("Error creating sections", e); }
-    }
-  );
-
-  server.tool(
-    "create_node_from_svg",
-    "Create nodes from SVG strings.",
-    { items: flexJson(z.array(svgItem)).describe("Array of SVG items to create"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_node_from_svg", params)); }
-      catch (e) { return mcpError("Error creating SVG nodes", e); }
-    }
-  );
-
-  server.tool(
-    "create_boolean_operation",
-    "Create a boolean operation (union, intersect, subtract, exclude) from multiple nodes.",
-    { items: flexJson(z.array(boolOpItem)).describe("Array of boolean operations to create"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_boolean_operation", params)); }
-      catch (e) { return mcpError("Error creating boolean operations", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "create_rectangle", description: "Create rectangles (leaf nodes — cannot have children). For containers/cards/panels, use create_frame instead. Batch: pass multiple items.", schema: { items: flexJson(z.array(rectItem)).describe("Array of rectangles to create"), depth: S.depth } },
+  { name: "create_ellipse", description: "Create ellipses (leaf nodes — cannot have children). For circular containers, use create_frame with cornerRadius instead. Batch: pass multiple items.", schema: { items: flexJson(z.array(ellipseItem)).describe("Array of ellipses to create"), depth: S.depth } },
+  { name: "create_line", description: "Create lines (leaf nodes — cannot have children). For dividers inside layouts, use create_frame with a thin height and fill color instead. Batch: pass multiple items.", schema: { items: flexJson(z.array(lineItem)).describe("Array of lines to create"), depth: S.depth } },
+  { name: "create_section", description: "Create section nodes to organize content on the canvas.", schema: { items: flexJson(z.array(sectionItem)).describe("Array of sections to create"), depth: S.depth } },
+  { name: "create_node_from_svg", description: "Create nodes from SVG strings.", schema: { items: flexJson(z.array(svgItem)).describe("Array of SVG items to create"), depth: S.depth } },
+  { name: "create_boolean_operation", description: "Create a boolean operation (union, intersect, subtract, exclude) from multiple nodes.", schema: { items: flexJson(z.array(boolOpItem)).describe("Array of boolean operations to create"), depth: S.depth } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

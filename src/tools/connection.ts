@@ -1,22 +1,15 @@
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "ping",
-    "Verify end-to-end connection to Figma. Call this right after join_channel. Returns { status: 'pong', documentName, currentPage } if the full chain (MCP → relay → plugin → Figma) is working. If this times out, the Figma plugin is not connected — ask the user to check the plugin window for the correct port and channel name.",
-    {},
-    async () => {
-      try {
-        return mcpJson(await sendCommand("ping", {}, 5000));
-      } catch (e) {
-        return mcpError("Connection verification failed", e);
-      }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  {
+    name: "ping",
+    description: "Verify end-to-end connection to Figma. Call this right after join_channel. Returns { status: 'pong', documentName, currentPage } if the full chain (MCP → relay → plugin → Figma) is working. If this times out, the Figma plugin is not connected — ask the user to check the plugin window for the correct port and channel name.",
+    schema: {},
+    timeoutMs: 5000,
+  },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

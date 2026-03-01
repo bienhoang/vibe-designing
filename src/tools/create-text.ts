@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler, appendToParent, styleNotFoundHint, suggestStyleForColor, suggestTextStyle, findVariableById } from "./helpers";
 
 // ─── Schema ──────────────────────────────────────────────────────
@@ -27,19 +26,11 @@ const textItem = z.object({
   textAutoResize: z.enum(["NONE", "WIDTH_AND_HEIGHT", "HEIGHT", "TRUNCATE"]).optional().describe("Text auto-resize behavior (default: WIDTH_AND_HEIGHT when FILL)"),
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "create_text",
-    "Create text nodes in Figma. Uses Inter font. Max 10 items per batch. Use textStyleName for typography and fontColorStyleName for fill color.",
-    { items: flexJson(z.array(textItem).max(10)).describe("Array of text nodes to create (max 10)"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("create_text", params)); }
-      catch (e) { return mcpError("Error creating text", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "create_text", description: "Create text nodes in Figma. Uses Inter font. Max 10 items per batch. Use textStyleName for typography and fontColorStyleName for fill color.", schema: { items: flexJson(z.array(textItem).max(10)).describe("Array of text nodes to create (max 10)"), depth: S.depth } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 
@@ -55,7 +46,7 @@ interface CreateTextContext {
   textStyles: any[] | null;
   paintStyles: any[] | null;
   resolvedTextStyleMap: Map<string, any>;
-  setCharacters: (node: TextNode, text: string) => Promise<void>;
+  setCharacters: (node: TextNode, text: string) => Promise<boolean | undefined>;
 }
 
 /**

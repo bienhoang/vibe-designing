@@ -1,10 +1,10 @@
 # Vibe Designing Project Roadmap
 
-## Current Status: MVP Complete (v0.1.1)
+## Current Status: v0.2.0 Complete
 
-**Release Date:** March 2025
-**Status:** Stable, Production Ready
-**Focus:** Core functionality, community feedback
+**Current Release:** v0.2.0 (March 2026)
+**Status:** Architecture Enhanced, Production Ready
+**Focus:** Community tools & collaborative features (Phase 2)
 
 ---
 
@@ -60,6 +60,23 @@
 - ✓ Tunnel relay as separate package
 - ✓ Docker support
 - ✓ CI/CD (Dependabot)
+
+---
+
+## Phase 1.5: Architecture Enhancement (✓ Completed, v0.2.0)
+
+### v0.2.0 Improvements (March 2026)
+- ✓ Embedded WebSocket tunnel in MCP server
+- ✓ Auto-registry codegen (tool registration automation)
+- ✓ Port auto-scanning (3055-3058 availability detection)
+- ✓ CLI setup command (`npx @bienhoang/vibe-designing --setup`)
+- ✓ Docker standalone tunnel support
+- ✓ Simplified deployment (no separate tunnel process)
+
+**Impact:**
+- Zero-install complexity (relay auto-starts with MCP)
+- DX improvement: add tool → run build (auto-registers)
+- Deployment simplified: single process instead of two
 
 ---
 
@@ -335,12 +352,20 @@ Phase 5 (Cloud)
 
 ## Release Schedule
 
-### v0.1.x (2026 Q1: Stability)
-- 0.1.2 — Bug fixes, performance tuning
-- 0.1.3 — Community feedback integration
-- 0.1.4 — Documentation improvements
+### v0.1.x (2026 Q1: Completed)
+- ✓ 0.1.1 — MVP release
+- ✓ 0.1.2 — Bug fixes, performance tuning
+- ✓ 0.1.3 — Community feedback integration
+- ✓ 0.1.4 — Documentation improvements
 
-### v0.2.0 (2026 Q2: Enhancement)
+### v0.2.0 (2026 Q1: Completed)
+- ✓ Embedded relay in MCP server
+- ✓ Auto-registry codegen (improved DX)
+- ✓ Port auto-scanning
+- ✓ CLI setup command
+- ✓ Simplified deployment
+
+### v0.3.0 (2026 Q2: Quality & Community)
 - Tests >80% coverage
 - Enhanced UI
 - Community integrations
@@ -415,7 +440,7 @@ Phase 5 (Cloud)
 
 ---
 
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-03-02
 **Next Review:** 2026-06-01
 **Maintained By:** bienhoang team
 

@@ -27,19 +27,21 @@ Choose your path:
 3. Enter: `https://raw.githubusercontent.com/bienhoang/vibe-designing/refs/heads/main/src/plugin/manifest.json`
 4. Plugin installs instantly
 
-#### 2. Start Tunnel Relay
+#### 2. Start MCP Server (Relay Auto-Starts)
 
 ```bash
-npx @bienhoang/vibe-designing-tunnel
+npx @bienhoang/vibe-designing
 ```
 
 Output:
 ```
-Tunnel listening on ws://localhost:3055
+MCP Server listening on stdio
+Tunnel embedded and listening on ws://localhost:3055
 Channels endpoint: http://localhost:3055/channels
 ```
 
-**Keep this terminal open.** The relay runs on port 3055 (configurable via `VIBE_DESIGNING_PORT`).
+**Keep this terminal open.** The relay auto-starts on first available port (3055-3058, configurable via `VIBE_DESIGNING_PORT`).
+Relay is now **embedded in the MCP server** — no separate process needed (v0.2.0+).
 
 #### 3. Configure MCP in Claude Desktop
 
@@ -149,46 +151,35 @@ In Figma → **Plugins** → **Development** → **Link existing plugin**:
 
 Choose **Manifest file** → Browse to `vibe-designing/plugin/manifest.json`
 
-#### 5. Start Tunnel Relay
-
-```bash
-npm run tunnel
-```
-
-Output:
-```
-Tunnel listening on ws://localhost:3055
-```
-
-#### 6. Start MCP Server
-
-In new terminal:
+#### 5. Start MCP Server (Relay Auto-Starts)
 
 ```bash
 npm run dev
 # or with custom port:
-VIBE_DESIGNING_TUNNEL_PORT=3055 npm run dev
+VIBE_DESIGNING_PORT=3055 npm run dev
 ```
 
-The MCP server is now running and will accept connections from Claude/Cursor.
+The MCP server is now running with embedded relay and will accept connections from Claude/Cursor.
+Relay auto-starts on first available port (3055-3058) — no separate tunnel process needed (v0.2.0+).
 
-#### 7. Configure AI IDE (same as CARRYME steps 3-4)
+#### 6. Configure AI IDE (same as CARRYME steps 3-4)
 
-#### 8. Connect Plugin (same as CARRYME step 5)
+#### 7. Connect Plugin (same as CARRYME step 5)
 
-#### 9. Test (same as CARRYME step 6)
+#### 8. Test (same as CARRYME step 6)
 
 ---
 
 ## Option 3: Docker Deployment
 
-### Quick Deploy
+### Quick Deploy (Relay Standalone)
 
 ```bash
 docker run -d \
   --name vibe-designing-relay \
   -p 3055:3055 \
-  ghcr.io/bienhoang/vibe-designing:latest
+  ghcr.io/bienhoang/vibe-designing:latest \
+  node dist/tunnel.js
 ```
 
 ### Build Custom Image
@@ -201,12 +192,16 @@ cd vibe-designing
 # Build image
 docker build -t my-vibe-designing:latest .
 
-# Run container
+# Run relay standalone
 docker run -d \
   --name vibe-designing-relay \
   -p 3055:3055 \
-  my-vibe-designing:latest
+  my-vibe-designing:latest \
+  node dist/tunnel.js
 ```
+
+**Note:** Uses `dist/tunnel.js` (from `src/server/tunnel-standalone.ts`) for standalone relay.
+MCP server with embedded relay available via: `node dist/mcp.js` (auto-starts relay on startup)
 
 ### Environment Variables
 
@@ -234,7 +229,7 @@ curl http://localhost:3055/channels
 version: "3.8"
 
 services:
-  vibe-designing-relay:
+  vibe-designing:
     image: ghcr.io/bienhoang/vibe-designing:latest
     ports:
       - "3055:3055"
@@ -242,30 +237,20 @@ services:
       VIBE_DESIGNING_PORT: 3055
       VIBE_DESIGNING_DEBUG: "false"
     restart: unless-stopped
+    command: node dist/tunnel.js
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3055/channels"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  mcp-server:
-    image: node:18-slim
-    working_dir: /app
-    volumes:
-      - ./:/app
-    command: npx @bienhoang/vibe-designing
-    environment:
-      VIBE_DESIGNING_TUNNEL_URL: "ws://vibe-designing-relay:3055"
-      VIBE_DESIGNING_CHANNEL: "design"
-    depends_on:
-      vibe-designing-relay:
-        condition: service_healthy
 ```
 
 Run with:
 ```bash
 docker-compose up -d
 ```
+
+**Note:** Simplified to single relay service (v0.2.0+). MCP server runs locally with auto-embedded relay.
 
 ---
 
@@ -368,13 +353,13 @@ If relay runs on cloud server:
 **Symptom:** Red dot in Figma plugin, "Connection refused"
 
 **Checks:**
-1. Is relay running?
+1. Is MCP server running?
    ```bash
-   npx @bienhoang/vibe-designing-tunnel
-   # Should show: "Tunnel listening on ws://localhost:3055"
+   npx @bienhoang/vibe-designing
+   # Should show: "Tunnel embedded and listening on ws://localhost:3055..."
    ```
 
-2. Is port 3055 free?
+2. Is port 3055-3058 free?
    ```bash
    lsof -i :3055  # macOS/Linux
    netstat -ano | findstr :3055  # Windows
@@ -386,15 +371,15 @@ If relay runs on cloud server:
    ```
 
 4. Firewall blocking?
-   - Check system firewall allows localhost:3055
+   - Check system firewall allows localhost:3055-3058
 
 **Fix:**
 ```bash
 # Kill any process on 3055
 kill -9 $(lsof -ti :3055)
 
-# Restart relay
-npx @bienhoang/vibe-designing-tunnel
+# Restart MCP server (relay auto-starts)
+npx @bienhoang/vibe-designing
 ```
 
 ### MCP Server Not Found
@@ -438,9 +423,9 @@ npx @bienhoang/vibe-designing
 - Large operation (100+ nodes)
 
 **Fixes:**
-1. Start relay:
+1. Start MCP server (relay auto-starts):
    ```bash
-   npx @bienhoang/vibe-designing-tunnel
+   npx @bienhoang/vibe-designing
    ```
 
 2. For large operations, use progress:
@@ -760,5 +745,5 @@ npm run build
 
 ---
 
-**Last Updated:** 2026-03-01
-**Vibe Designing Version:** 0.1.1
+**Last Updated:** 2026-03-02
+**Vibe Designing Version:** 0.2.0

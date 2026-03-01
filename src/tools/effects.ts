@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson, flexBool } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler } from "./helpers";
 
 // ─── Schemas ─────────────────────────────────────────────────────
@@ -41,49 +40,14 @@ const nodePropertiesItem = z.object({
   properties: flexJson(z.record(z.string(), z.unknown())).describe("Key-value properties to set"),
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "set_effects",
-    "Set effects (shadows, blurs) on nodes. Use effectStyleName to apply by name, or provide raw effects. Batch: pass multiple items.",
-    { items: flexJson(z.array(effectItem)).describe("Array of {nodeId, effects}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_effects", params)); }
-      catch (e) { return mcpError("Error setting effects", e); }
-    }
-  );
-
-  server.tool(
-    "set_constraints",
-    "Set constraints on nodes. Batch: pass multiple items.",
-    { items: flexJson(z.array(constraintItem)).describe("Array of {nodeId, horizontal, vertical}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_constraints", params)); }
-      catch (e) { return mcpError("Error setting constraints", e); }
-    }
-  );
-
-  server.tool(
-    "set_export_settings",
-    "Set export settings on nodes. Batch: pass multiple items.",
-    { items: flexJson(z.array(exportSettingsItem)).describe("Array of {nodeId, settings}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_export_settings", params)); }
-      catch (e) { return mcpError("Error setting export settings", e); }
-    }
-  );
-
-  server.tool(
-    "set_node_properties",
-    "Set arbitrary properties on nodes. Batch: pass multiple items.",
-    { items: flexJson(z.array(nodePropertiesItem)).describe("Array of {nodeId, properties}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_node_properties", params)); }
-      catch (e) { return mcpError("Error setting node properties", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "set_effects", description: "Set effects (shadows, blurs) on nodes. Use effectStyleName to apply by name, or provide raw effects. Batch: pass multiple items.", schema: { items: flexJson(z.array(effectItem)).describe("Array of {nodeId, effects}"), depth: S.depth } },
+  { name: "set_constraints", description: "Set constraints on nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(constraintItem)).describe("Array of {nodeId, horizontal, vertical}"), depth: S.depth } },
+  { name: "set_export_settings", description: "Set export settings on nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(exportSettingsItem)).describe("Array of {nodeId, settings}"), depth: S.depth } },
+  { name: "set_node_properties", description: "Set arbitrary properties on nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(nodePropertiesItem)).describe("Array of {nodeId, properties}"), depth: S.depth } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

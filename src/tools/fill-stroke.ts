@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson, flexBool } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler, styleNotFoundHint, suggestStyleForColor } from "./helpers";
 
 // ─── Schemas ─────────────────────────────────────────────────────
@@ -32,49 +31,14 @@ const opacityItem = z.object({
   opacity: z.coerce.number().min(0).max(1).describe("Opacity (0-1)"),
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "set_fill_color",
-    "Set fill color on nodes. Use styleName to apply a paint style by name, or provide color directly. Batch: pass multiple items.",
-    { items: flexJson(z.array(fillItem)).describe("Array of {nodeId, color?, styleName?}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_fill_color", params)); }
-      catch (e) { return mcpError("Error setting fill", e); }
-    }
-  );
-
-  server.tool(
-    "set_stroke_color",
-    "Set stroke color on nodes. Use styleName to apply a paint style by name. Batch: pass multiple items.",
-    { items: flexJson(z.array(strokeItem)).describe("Array of {nodeId, color?, strokeWeight?, styleName?}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_stroke_color", params)); }
-      catch (e) { return mcpError("Error setting stroke", e); }
-    }
-  );
-
-  server.tool(
-    "set_corner_radius",
-    "Set corner radius on nodes. Batch: pass multiple items.",
-    { items: flexJson(z.array(cornerItem)).describe("Array of {nodeId, radius, corners?}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_corner_radius", params)); }
-      catch (e) { return mcpError("Error setting corner radius", e); }
-    }
-  );
-
-  server.tool(
-    "set_opacity",
-    "Set opacity on nodes. Batch: pass multiple items.",
-    { items: flexJson(z.array(opacityItem)).describe("Array of {nodeId, opacity}"), depth: S.depth },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("set_opacity", params)); }
-      catch (e) { return mcpError("Error setting opacity", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "set_fill_color", description: "Set fill color on nodes. Use styleName to apply a paint style by name, or provide color directly. Batch: pass multiple items.", schema: { items: flexJson(z.array(fillItem)).describe("Array of {nodeId, color?, styleName?}"), depth: S.depth } },
+  { name: "set_stroke_color", description: "Set stroke color on nodes. Use styleName to apply a paint style by name. Batch: pass multiple items.", schema: { items: flexJson(z.array(strokeItem)).describe("Array of {nodeId, color?, strokeWeight?, styleName?}"), depth: S.depth } },
+  { name: "set_corner_radius", description: "Set corner radius on nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(cornerItem)).describe("Array of {nodeId, radius, corners?}"), depth: S.depth } },
+  { name: "set_opacity", description: "Set opacity on nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(opacityItem)).describe("Array of {nodeId, opacity}"), depth: S.depth } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 

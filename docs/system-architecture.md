@@ -15,18 +15,21 @@ Vibe Designing is a distributed system connecting AI agents to Figma through thr
 │ MCP Server (src/server/mcp.ts)                               │
 │ • Stdio-based MCP server                                    │
 │ • Manages 16 tool modules → 50+ MCP tools                   │
-│ • WebSocket client to relay                                 │
+│ • WebSocket client to embedded relay                        │
 │ • Request/response with UUID tracking & 30s timeout         │
 └────────────────────┬────────────────────────────────────────┘
-                     │ WebSocket (tcp://localhost:3055)
+                     │ WebSocket (tcp://localhost:3055-3058)
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ WebSocket Relay (packages/tunnel/index.ts)                  │
+│ WebSocket Relay (src/server/tunnel.ts - EMBEDDED)           │
+│ • Embedded in MCP server (v0.2.0+)                          │
+│ • Auto-scans ports 3055-3058 for availability               │
 │ • Channel-based message broker                              │
 │ • One MCP + one plugin per channel                          │
 │ • Message types: join, message, progress_update, reset      │
 │ • 15s heartbeat for health checks                           │
 │ • HTTP /channels (debug), DELETE for reset                  │
+│ • Standalone Docker mode: src/server/tunnel-standalone.ts   │
 └────────────────────┬────────────────────────────────────────┘
                      │ WebSocket
                      ▼
@@ -74,6 +77,13 @@ Vibe Designing is a distributed system connecting AI agents to Figma through thr
 
 ### Layer 2: WebSocket Relay (Server ↔ Plugin)
 
+**Implementation:** Embedded in MCP server (`src/server/tunnel.ts`) — starts automatically (v0.2.0+)
+
+**Port Auto-Scanning:** Relay tries ports 3055-3058 in order, uses first available
+- Configurable via `VIBE_DESIGNING_PORT` env var
+- Auto-starts with MCP server (no separate process)
+- Standalone Docker mode: `src/server/tunnel-standalone.ts` for custom deployments
+
 **Protocol:** Custom JSON-RPC over WebSocket
 
 **Message Types:**
@@ -84,7 +94,7 @@ Vibe Designing is a distributed system connecting AI agents to Figma through thr
   type: "join",
   channel: "my-channel",
   role: "mcp" | "plugin",
-  version: "0.1.1"
+  version: "0.2.0"
 }
 
 // Bidirectional
@@ -455,18 +465,14 @@ for (const nodeId of nodeIds) {
 
 ## Deployment Models
 
-### Local Development
+### Local Development (v0.2.0+)
 
 ```
 ┌─ Terminal 1 ──────────┐
-│ npm run build         │
 │ npm run dev           │
-│ MCP server listening  │
-└───────────────────────┘
-
-┌─ Terminal 2 ──────────┐
-│ npm run tunnel        │
-│ Relay on :3055       │
+│ MCP server + Relay    │
+│ (auto-starts relay)   │
+│ Listening :3055-3058  │
 └───────────────────────┘
 
 ┌─ Figma ───────────────┐
@@ -482,6 +488,8 @@ for (const nodeId of nodeIds) {
 └───────────────────────┘
 ```
 
+**No separate tunnel process needed** — relay auto-starts with MCP server (v0.2.0+)
+
 ### Docker Deployment
 
 ```dockerfile
@@ -494,10 +502,10 @@ RUN npm run build
 
 EXPOSE 3055
 
-CMD ["npm", "run", "tunnel"]
+CMD ["node", "dist/tunnel.js"]
 ```
 
-Relay runs in container, accessible via network.
+Relay runs standalone via `dist/tunnel.js` (from `src/server/tunnel-standalone.ts`), accessible via network.
 
 ### Cloud Deployment (Future)
 
@@ -577,5 +585,5 @@ Challenges:
 
 ---
 
-**Last Updated:** 2026-03-01
-**Architecture Version:** 1.0
+**Last Updated:** 2026-03-02
+**Architecture Version:** 2.0 (v0.2.0)

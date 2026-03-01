@@ -7,15 +7,19 @@
 ```
 src/
 ├── server/
-│   └── mcp.ts               # Main MCP server entry point
+│   ├── mcp.ts               # Main MCP server entry point
+│   ├── tunnel.ts            # Embedded WebSocket relay (v0.2.0+)
+│   ├── tunnel-standalone.ts # Docker tunnel (v0.2.0+)
+│   ├── port-scanner.ts      # Port auto-scanning 3055-3058 (v0.2.0+)
+│   └── cli-setup.ts         # CLI setup command (v0.2.0+)
 ├── plugin/                   # Figma plugin files
 │   ├── code.ts              # Plugin code (sandbox)
 │   ├── ui.html              # Plugin UI (iframe)
 │   ├── manifest.json        # Plugin declaration
 │   └── setcharacters.js     # Text rendering utility
 ├── tools/                    # Design operation tools
-│   ├── mcp-registry.ts      # MCP registration hub
-│   ├── figma-registry.ts    # Plugin dispatch table
+│   ├── _mcp-registry.generated.ts      # Auto-generated MCP registry (v0.2.0+)
+│   ├── _figma-registry.generated.ts    # Auto-generated Figma registry (v0.2.0+)
 │   ├── schemas.ts           # Zod validation schemas
 │   ├── types.ts             # Shared TypeScript types
 │   └── [category]/          # Organized by feature
@@ -62,9 +66,20 @@ src/
 - **Exceptions:** Lint tools (759 LOC), UI HTML (878 LOC) acceptable due to complexity
 - **Strategy:** If a file grows beyond 250 LOC, refactor into focused modules
 
-## Tool Registration Pattern
+## Tool Registration Pattern (v0.2.0+)
 
-Every tool module follows this standardized structure:
+Tool modules now use **declarative registration** via code generation for improved DX and maintainability.
+
+### Pattern Overview
+
+Every tool module exports two items:
+1. **`mcpTools: ToolDefinition[]`** — Declarative tool definitions (v0.2.0+)
+2. **`figmaHandlers`** — Plugin command dispatchers (unchanged)
+
+The build system auto-generates registries from these exports:
+- `scripts/generate-registries.ts` runs pre-build
+- Generates `src/tools/_mcp-registry.generated.ts` (auto-wrapped in server.tool() calls)
+- Generates `src/tools/_figma-registry.generated.ts` (merged dispatcher table)
 
 ### 1. Define Zod Schema
 
@@ -148,28 +163,51 @@ export const figmaHandlers: Record<string, CommandHandler> = {
 - Return plain object (will be JSON serialized)
 - Don't use async/await unless necessary (Figma uses event-driven model)
 
-### 4. Register with MCP
+### 4. Export Tool Definition (v0.2.0+)
 
 ```typescript
-export function registerMcpTools(
-  server: Server,
-  sendCommand: (action: string, params: any) => Promise<any>
-) {
-  server.tool(
-    "your_tool",
-    YourToolSchema,
-    (params) => yourTool(params)
-  );
-}
+import { ToolDefinition } from "@modelcontextprotocol/sdk/types";
+
+export const mcpTools: ToolDefinition[] = [
+  {
+    name: "your_tool",
+    description: "Does something useful",
+    inputSchema: {
+      type: "object",
+      properties: {
+        nodeId: {
+          type: "string",
+          description: "Node ID or path",
+        },
+        value: {
+          type: "number",
+          description: "Numeric value",
+        },
+        enabled: {
+          type: "boolean",
+          description: "Enable feature",
+        },
+      },
+      required: ["nodeId", "value"],
+    },
+  },
+];
 
 export { figmaHandlers };
 ```
 
-**Registration Guidelines:**
-- Export `registerMcpTools` function
-- Export `figmaHandlers` object (aggregated in mcp-registry.ts)
-- Tool name: `snake_case` matching MCP convention
-- Always pass schema for validation
+**Declarative Guidelines (v0.2.0+):**
+- Export `mcpTools` array with `ToolDefinition` objects
+- Auto-wrapped by codegen into server.tool() calls
+- Export `figmaHandlers` (no changes to plugin-side handlers)
+- No manual `registerMcpTools()` function needed
+- Run `npm run build` (or `npm run generate` standalone) to generate registries
+
+**Adding a New Tool (Simplified Workflow):**
+1. Create `src/tools/my-feature.ts`
+2. Export `mcpTools: ToolDefinition[]` and `figmaHandlers`
+3. Run `npm run build` (codegen runs automatically via prebuild)
+4. Tool is auto-registered in MCP server
 
 ## Naming Conventions
 
@@ -710,5 +748,6 @@ figma.getNodeById(params.nodeId); // Might be undefined
 
 ---
 
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-03-02
+**Version:** 0.2.0
 **Status:** Current and enforced for all pull requests

@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { flexJson, flexBool } from "../utils/coercion";
 import * as S from "./schemas";
-import type { McpServer, SendCommandFn } from "./types";
-import { mcpJson, mcpError } from "./types";
+import type { ToolDefinition } from "./types";
 import { batchHandler, findVariableById } from "./helpers";
 import { formatContrastFailures } from "../utils/wcag";
 
@@ -55,143 +54,23 @@ const setExplicitModeItem = z.object({
   modeId: z.string().describe("Mode ID to pin (e.g. Dark mode)"),
 });
 
-// ─── MCP Registration ────────────────────────────────────────────
+// ─── MCP Tool Definitions ───────────────────────────────────────
 
-export function registerMcpTools(server: McpServer, sendCommand: SendCommandFn) {
-  server.tool(
-    "create_variable_collection",
-    "Create variable collections. Batch: pass multiple items.",
-    { items: flexJson(z.array(collectionItem)).describe("Array of {name}") },
-    async ({ items }: any) => {
-      try { return mcpJson(await sendCommand("create_variable_collection", { items })); }
-      catch (e) { return mcpError("Error creating variable collection", e); }
-    }
-  );
-
-  server.tool(
-    "create_variable",
-    "Create variables in a collection. Batch: pass multiple items.",
-    { items: flexJson(z.array(variableItem)).describe("Array of {collectionId, name, resolvedType}") },
-    async ({ items }: any) => {
-      try { return mcpJson(await sendCommand("create_variable", { items })); }
-      catch (e) { return mcpError("Error creating variable", e); }
-    }
-  );
-
-  server.tool(
-    "set_variable_value",
-    "Set variable values for modes. Batch: pass multiple items.",
-    { items: flexJson(z.array(setValueItem)).describe("Array of {variableId, modeId, value}") },
-    async ({ items }: any) => {
-      try { return mcpJson(await sendCommand("set_variable_value", { items })); }
-      catch (e) { return mcpError("Error setting variable value", e); }
-    }
-  );
-
-  server.tool(
-    "get_local_variables",
-    "List local variables. Pass includeValues:true to get all mode values in bulk (avoids N separate get_variable_by_id calls).",
-    {
-      type: z.enum(["COLOR", "FLOAT", "STRING", "BOOLEAN"]).optional().describe("Filter by type"),
-      collectionId: z.string().optional().describe("Filter by collection. Omit for all collections."),
-      includeValues: flexBool(z.boolean()).optional().describe("Include valuesByMode for each variable (default: false)"),
-    },
-    async (params: any) => {
-      try { return mcpJson(await sendCommand("get_local_variables", params)); }
-      catch (e) { return mcpError("Error getting variables", e); }
-    }
-  );
-
-  server.tool(
-    "get_local_variable_collections",
-    "List all local variable collections.",
-    {},
-    async () => {
-      try { return mcpJson(await sendCommand("get_local_variable_collections")); }
-      catch (e) { return mcpError("Error getting variable collections", e); }
-    }
-  );
-
-  server.tool(
-    "get_variable_by_id",
-    "Get detailed variable info including all mode values.",
-    { variableId: z.string().describe("Variable ID") },
-    async ({ variableId }: any) => {
-      try { return mcpJson(await sendCommand("get_variable_by_id", { variableId })); }
-      catch (e) { return mcpError("Error getting variable", e); }
-    }
-  );
-
-  server.tool(
-    "get_variable_collection_by_id",
-    "Get detailed variable collection info including modes and variable IDs.",
-    { collectionId: z.string().describe("Collection ID") },
-    async ({ collectionId }: any) => {
-      try { return mcpJson(await sendCommand("get_variable_collection_by_id", { collectionId })); }
-      catch (e) { return mcpError("Error getting variable collection", e); }
-    }
-  );
-
-  server.tool(
-    "set_variable_binding",
-    "Bind variables to node properties. Common fields: 'fills/0/color', 'strokes/0/color', 'opacity', 'topLeftRadius', 'itemSpacing'. Batch: pass multiple items.",
-    { items: flexJson(z.array(bindingItem)).describe("Array of {nodeId, field, variableId}") },
-    async ({ items }: any) => {
-      try { return mcpJson(await sendCommand("set_variable_binding", { items })); }
-      catch (e) { return mcpError("Error binding variable", e); }
-    }
-  );
-
-  server.tool(
-    "add_mode",
-    "Add modes to variable collections. Batch: pass multiple items.",
-    { items: flexJson(z.array(addModeItem)).describe("Array of {collectionId, name}") },
-    async ({ items }: any) => {
-      try { return mcpJson(await sendCommand("add_mode", { items })); }
-      catch (e) { return mcpError("Error adding mode", e); }
-    }
-  );
-
-  server.tool(
-    "rename_mode",
-    "Rename modes in variable collections. Batch: pass multiple items.",
-    { items: flexJson(z.array(renameModeItem)).describe("Array of {collectionId, modeId, name}") },
-    async ({ items }: any) => {
-      try { return mcpJson(await sendCommand("rename_mode", { items })); }
-      catch (e) { return mcpError("Error renaming mode", e); }
-    }
-  );
-
-  server.tool(
-    "remove_mode",
-    "Remove modes from variable collections. Batch: pass multiple items.",
-    { items: flexJson(z.array(removeModeItem)).describe("Array of {collectionId, modeId}") },
-    async ({ items }: any) => {
-      try { return mcpJson(await sendCommand("remove_mode", { items })); }
-      catch (e) { return mcpError("Error removing mode", e); }
-    }
-  );
-
-  server.tool(
-    "set_explicit_variable_mode",
-    "Pin a variable collection mode on a frame (e.g. show Dark mode). Batch: pass multiple items.",
-    { items: flexJson(z.array(setExplicitModeItem)).describe("Array of {nodeId, collectionId, modeId}") },
-    async ({ items }: any) => {
-      try { return mcpJson(await sendCommand("set_explicit_variable_mode", { items })); }
-      catch (e) { return mcpError("Error setting variable mode", e); }
-    }
-  );
-
-  server.tool(
-    "get_node_variables",
-    "Get variable bindings on a node. Returns which variables are bound to fills, strokes, opacity, corner radius, etc.",
-    { nodeId: S.nodeId },
-    async ({ nodeId }: any) => {
-      try { return mcpJson(await sendCommand("get_node_variables", { nodeId })); }
-      catch (e) { return mcpError("Error getting node variables", e); }
-    }
-  );
-}
+export const mcpTools: ToolDefinition[] = [
+  { name: "create_variable_collection", description: "Create variable collections. Batch: pass multiple items.", schema: { items: flexJson(z.array(collectionItem)).describe("Array of {name}") } },
+  { name: "create_variable", description: "Create variables in a collection. Batch: pass multiple items.", schema: { items: flexJson(z.array(variableItem)).describe("Array of {collectionId, name, resolvedType}") } },
+  { name: "set_variable_value", description: "Set variable values for modes. Batch: pass multiple items.", schema: { items: flexJson(z.array(setValueItem)).describe("Array of {variableId, modeId, value}") } },
+  { name: "get_local_variables", description: "List local variables. Pass includeValues:true to get all mode values in bulk (avoids N separate get_variable_by_id calls).", schema: { type: z.enum(["COLOR", "FLOAT", "STRING", "BOOLEAN"]).optional().describe("Filter by type"), collectionId: z.string().optional().describe("Filter by collection. Omit for all collections."), includeValues: flexBool(z.boolean()).optional().describe("Include valuesByMode for each variable (default: false)") } },
+  { name: "get_local_variable_collections", description: "List all local variable collections.", schema: {} },
+  { name: "get_variable_by_id", description: "Get detailed variable info including all mode values.", schema: { variableId: z.string().describe("Variable ID") } },
+  { name: "get_variable_collection_by_id", description: "Get detailed variable collection info including modes and variable IDs.", schema: { collectionId: z.string().describe("Collection ID") } },
+  { name: "set_variable_binding", description: "Bind variables to node properties. Common fields: 'fills/0/color', 'strokes/0/color', 'opacity', 'topLeftRadius', 'itemSpacing'. Batch: pass multiple items.", schema: { items: flexJson(z.array(bindingItem)).describe("Array of {nodeId, field, variableId}") } },
+  { name: "add_mode", description: "Add modes to variable collections. Batch: pass multiple items.", schema: { items: flexJson(z.array(addModeItem)).describe("Array of {collectionId, name}") } },
+  { name: "rename_mode", description: "Rename modes in variable collections. Batch: pass multiple items.", schema: { items: flexJson(z.array(renameModeItem)).describe("Array of {collectionId, modeId, name}") } },
+  { name: "remove_mode", description: "Remove modes from variable collections. Batch: pass multiple items.", schema: { items: flexJson(z.array(removeModeItem)).describe("Array of {collectionId, modeId}") } },
+  { name: "set_explicit_variable_mode", description: "Pin a variable collection mode on a frame (e.g. show Dark mode). Batch: pass multiple items.", schema: { items: flexJson(z.array(setExplicitModeItem)).describe("Array of {nodeId, collectionId, modeId}") } },
+  { name: "get_node_variables", description: "Get variable bindings on a node. Returns which variables are bound to fills, strokes, opacity, corner radius, etc.", schema: { nodeId: S.nodeId } },
+];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
 
