@@ -1,0 +1,55 @@
+{
+  "name": "@bienhoang/vibe-designing",
+  "description": "Vibe Designing — AI-powered MCP bridge for designing in Figma.",
+  "version": "0.1.1",
+  "license": "MIT",
+  "author": "bienhoang <https://github.com/bienhoang>",
+  "homepage": "https://github.com/bienhoang/vibe-designing",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bienhoang/vibe-designing.git"
+  },
+  "keywords": [
+    "figma",
+    "mcp",
+    "ai",
+    "design",
+    "model-context-protocol",
+    "vibe-coding"
+  ],
+  "module": "dist/mcp.js",
+  "main": "dist/mcp.js",
+  "bin": {
+    "vibe-designing-mcp": "dist/mcp.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "scripts": {
+    "start": "node dist/mcp.js",
+    "socket": "tsx packages/tunnel/src/index.ts",
+    "setup": "./scripts/setup.sh",
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "dev": "npm run build:watch",
+    "dev:mcp": "tsx src/server/mcp.ts",
+    "pub:release": "npm run build && npm publish"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.123.0",
+    "@types/node": "^25.3.2",
+    "@types/ws": "^8.18.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.27.1",
+    "uuid": "latest",
+    "ws": "latest",
+    "zod": "4.3.6"
+  }
+}

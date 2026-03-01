@@ -1,0 +1,714 @@
+# Vibe Designing Code Standards & Patterns
+
+## File Organization
+
+### Structure Overview
+
+```
+src/
+├── server/
+│   └── mcp.ts               # Main MCP server entry point
+├── plugin/                   # Figma plugin files
+│   ├── code.ts              # Plugin code (sandbox)
+│   ├── ui.html              # Plugin UI (iframe)
+│   ├── manifest.json        # Plugin declaration
+│   └── setcharacters.js     # Text rendering utility
+├── tools/                    # Design operation tools
+│   ├── mcp-registry.ts      # MCP registration hub
+│   ├── figma-registry.ts    # Plugin dispatch table
+│   ├── schemas.ts           # Zod validation schemas
+│   ├── types.ts             # Shared TypeScript types
+│   └── [category]/          # Organized by feature
+│       ├── components.ts
+│       ├── create-frame.ts
+│       ├── create-shape.ts
+│       ├── create-text.ts
+│       ├── modify-node.ts
+│       ├── fill-stroke.ts
+│       ├── text.ts
+│       ├── effects.ts
+│       ├── update-frame.ts
+│       ├── styles.ts
+│       ├── variables.ts
+│       ├── node-info.ts
+│       ├── selection.ts
+│       ├── document.ts
+│       ├── lint.ts
+│       ├── connection.ts
+│       ├── fonts.ts
+│       ├── helpers.ts
+│       └── prompts.ts
+└── utils/                    # Utility functions
+    ├── figma-helpers.ts     # Plugin runtime helpers
+    ├── serialize-node.ts    # Node JSON serialization
+    ├── filter-node.ts       # REST API compatibility
+    ├── wcag.ts              # Accessibility validation
+    ├── coercion.ts          # Input preprocessing
+    ├── color.ts             # Color utilities
+    ├── base64.ts            # Base64 encoding
+    └── logger.ts            # Logging utility
+```
+
+### File Naming Conventions
+
+- **kebab-case** for all TypeScript files: `create-frame.ts`, `fill-stroke.ts`
+- **camelCase** for exports: `registerMcpTools`, `figmaHandlers`
+- **UPPERCASE** for constants: `DEFAULT_TIMEOUT`, `MAX_NODES`
+- **lowercase** for Zod schemas: `CreateFrameSchema`, `FillColorSchema`
+
+### File Size Guidelines
+
+- **Target:** Keep individual files under 200 LOC
+- **Exceptions:** Lint tools (759 LOC), UI HTML (878 LOC) acceptable due to complexity
+- **Strategy:** If a file grows beyond 250 LOC, refactor into focused modules
+
+## Tool Registration Pattern
+
+Every tool module follows this standardized structure:
+
+### 1. Define Zod Schema
+
+```typescript
+// src/tools/your-tool.ts
+import { z } from "zod";
+import { flexNum, flexString, flexBool } from "./schemas";
+
+const YourToolSchema = z.object({
+  nodeId: flexString.describe("Node ID or path"),
+  value: flexNum.describe("Numeric value"),
+  enabled: flexBool.describe("Enable feature"),
+});
+```
+
+**Schema Guidelines:**
+- Use `flexNum`, `flexBool`, `flexString` from schemas.ts for AI input resilience
+- Always include `.describe()` for MCP documentation
+- Mark optional fields with `.optional()`
+- Validate before use in Figma handler
+
+### 2. Define MCP Handler
+
+```typescript
+export async function yourTool(
+  params: z.infer<typeof YourToolSchema>
+) {
+  // Coerce/validate (already done by MCP framework)
+  const { nodeId, value, enabled } = params;
+
+  // Send command to plugin
+  const result = await sendCommand("your_command", {
+    nodeId,
+    value,
+    enabled,
+  });
+
+  // Return formatted response
+  return mcpJson({
+    success: true,
+    nodeId,
+    newValue: result.value,
+  });
+}
+```
+
+**Handler Guidelines:**
+- Accept typed params from Zod schema
+- Call `sendCommand(command, params)` to plugin
+- Return `mcpJson()` for success or `mcpError()` for errors
+- Include relevant context in response (IDs, before/after values)
+
+### 3. Define Figma Handler
+
+```typescript
+export const figmaHandlers: Record<string, CommandHandler> = {
+  your_command: async (params) => {
+    const { nodeId, value, enabled } = params;
+
+    // Get node from Figma
+    const node = figma.getNodeById(nodeId);
+    if (!node) {
+      throw new Error(`Node not found: ${nodeId}`);
+    }
+
+    // Apply operation
+    node.customData = { value, enabled };
+
+    // Return result
+    return {
+      success: true,
+      value: node.customData.value,
+    };
+  },
+};
+```
+
+**Handler Guidelines:**
+- Use Figma plugin API directly
+- Throw descriptive errors (caught and formatted by relay)
+- Return plain object (will be JSON serialized)
+- Don't use async/await unless necessary (Figma uses event-driven model)
+
+### 4. Register with MCP
+
+```typescript
+export function registerMcpTools(
+  server: Server,
+  sendCommand: (action: string, params: any) => Promise<any>
+) {
+  server.tool(
+    "your_tool",
+    YourToolSchema,
+    (params) => yourTool(params)
+  );
+}
+
+export { figmaHandlers };
+```
+
+**Registration Guidelines:**
+- Export `registerMcpTools` function
+- Export `figmaHandlers` object (aggregated in mcp-registry.ts)
+- Tool name: `snake_case` matching MCP convention
+- Always pass schema for validation
+
+## Naming Conventions
+
+### MCP Tool Names
+
+Use `snake_case`, descriptive, action-oriented:
+
+```typescript
+// ✓ Good
+create_frame
+move_node
+set_fill_color
+get_node_info
+lint_node
+create_paint_style
+
+// ✗ Avoid
+createFrame         // camelCase
+frame_create        # verb second
+makeFrame           # unclear intent
+color_fill          # unclear subject
+```
+
+### Plugin Commands
+
+Mirror MCP tool names but can be more terse:
+
+```typescript
+// MCP tool          Plugin command
+create_frame    →   create_frame (same)
+set_fill_color  →   fill_color   (optional shortening)
+```
+
+### Figma Variables & Custom Data
+
+Use descriptive `camelCase`:
+
+```typescript
+// ✓ Good
+node.customData = { isComponent: true, variantKey: "size/large" };
+
+// ✗ Avoid
+node.customData = { comp: true, key: "s/l" }; // Too abbreviated
+```
+
+## Error Handling
+
+### MCP Errors (Server Side)
+
+```typescript
+import { mcpError } from "../utils/logger";
+
+export async function toolName(params: z.infer<typeof Schema>) {
+  try {
+    const result = await sendCommand("command", params);
+    return mcpJson(result);
+  } catch (error) {
+    return mcpError(
+      "Tool failed",
+      `Details: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+```
+
+### Figma Errors (Plugin Side)
+
+```typescript
+export const figmaHandlers = {
+  command: async (params) => {
+    // Validation
+    if (!params.nodeId) {
+      throw new Error("nodeId is required");
+    }
+
+    // Figma API checks
+    const node = figma.getNodeById(params.nodeId);
+    if (!node) {
+      throw new Error(`Node not found: ${params.nodeId}`);
+    }
+
+    // Type guards
+    if (node.type !== "FRAME") {
+      throw new Error(`Expected FRAME, got ${node.type}`);
+    }
+
+    // Operation
+    try {
+      node.name = "New Name";
+      return { success: true, name: node.name };
+    } catch (err) {
+      throw new Error(`Failed to rename: ${err}`);
+    }
+  },
+};
+```
+
+**Error Guidelines:**
+- Throw descriptive errors with context
+- Include what failed and why
+- Don't expose internal Figma IDs unnecessarily
+- All thrown errors are caught and formatted by relay
+
+## Input Validation
+
+### Coercion Strategy
+
+Use forgiving Zod preprocessors for AI agent input:
+
+```typescript
+// src/tools/schemas.ts
+export const flexNum = z
+  .union([z.number(), z.string()])
+  .transform((val) => {
+    if (typeof val === "number") return val;
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  });
+
+export const flexBool = z
+  .union([z.boolean(), z.string()])
+  .transform((val) => {
+    if (typeof val === "boolean") return val;
+    return ["true", "yes", "1", "on"].includes(
+      String(val).toLowerCase()
+    );
+  });
+
+export const flexString = z
+  .union([z.string(), z.number()])
+  .transform((val) => String(val));
+```
+
+**Usage:**
+
+```typescript
+// AI agent sends: { color: "FF0000" } or { color: "red" }
+// Both work with flexString
+
+const ColorSchema = z.object({
+  color: flexString,
+  opacity: flexNum, // Accepts 0.5, "0.5", "50%"
+});
+```
+
+### Type Guards
+
+```typescript
+// ✓ Good: Explicit type checking
+function isFrame(node: SceneNode): node is FrameNode {
+  return node.type === "FRAME";
+}
+
+if (isFrame(node)) {
+  // TypeScript now knows node.autoLayout exists
+  node.autoLayout = { layoutMode: "VERTICAL" };
+}
+
+// ✗ Avoid: Weak type checks
+if (node?.layoutMode) {
+  // Might fail on non-layout nodes
+}
+```
+
+## API Response Format
+
+### Success Response (mcpJson)
+
+```typescript
+return mcpJson({
+  success: true,
+  nodeId: "123:456",
+  name: "New Frame",
+  properties: {
+    width: 800,
+    height: 600,
+  },
+});
+```
+
+**Response Guidelines:**
+- Always include `success: true`
+- Include the modified node ID(s)
+- Include changed properties (before/after if helpful)
+- Keep response <50KB (enforced by mcpJson)
+- Serialize complex objects carefully
+
+### Error Response (mcpError)
+
+```typescript
+return mcpError(
+  "Operation Failed",
+  `Could not resize node: ${nodeId} (node type: COMPONENT_SET)`
+);
+```
+
+**Error Guidelines:**
+- First param: Error title (short)
+- Second param: Detailed explanation with context
+- Avoid exposing error codes, use readable messages
+- Include relevant IDs/names for debugging
+
+## Node Serialization
+
+### Serialization Budget
+
+Default 200 nodes max per serialization to prevent huge responses:
+
+```typescript
+import { serializeNode } from "../utils/serialize-node";
+
+const serialized = serializeNode(node, {
+  depth: 3,           // Traverse 3 levels deep
+  nodeLimit: 200,     // Stop at 200 nodes
+});
+
+return mcpJson(serialized);
+```
+
+### What Gets Serialized
+
+✓ Basic properties: `id`, `name`, `type`, `x`, `y`, `width`, `height`
+✓ Content: text, fills, strokes, effects
+✓ Structure: children (if within budget)
+✓ Design tokens: styles, variables, bindings
+✓ Constraints: horizontal, vertical rules
+
+✗ Very large data: images, fonts (use references)
+✗ Non-serializable: function references, circular refs
+
+## Logging
+
+### Logger Pattern
+
+```typescript
+import { logger } from "../utils/logger";
+
+// Development (visible in plugin console)
+logger.log("Operation started", { nodeId, action });
+
+// Errors (always visible)
+logger.error("Operation failed", { nodeId, error: err.message });
+```
+
+**Logger Guidelines:**
+- Use for debugging, not for required output
+- Include context object with relevant data
+- Never log sensitive information (API keys, user data)
+- Keep logs concise and searchable
+
+## Type Definitions
+
+### Shared Types (types.ts)
+
+```typescript
+// Command protocol
+export interface CommandMessage {
+  id: string;
+  action: string;
+  params: Record<string, any>;
+  timestamp: number;
+}
+
+export interface CommandResponse {
+  id: string;
+  success: boolean;
+  data?: Record<string, any>;
+  error?: {
+    title: string;
+    details: string;
+  };
+}
+
+// Node info
+export interface NodeInfo {
+  id: string;
+  name: string;
+  type: string;
+  properties: Record<string, any>;
+}
+```
+
+**Type Guidelines:**
+- Use interfaces for external contracts
+- Use types for internal unions and utilities
+- Always export from types.ts for visibility
+- Document complex types with JSDoc comments
+
+## Code Comments
+
+### When to Comment
+
+✓ **Complex algorithms:** WCAG contrast calculation, boolean operations
+✓ **Non-obvious intent:** Why we serialize nodes with 200-node limit
+✓ **Workarounds:** Why we use postMessage instead of direct API
+✓ **Figma API quirks:** Undocumented behavior or limitations
+
+✗ **Self-documenting code:** `const nodeId = params.nodeId;` needs no comment
+✗ **What (obvious):** `count++` doesn't need a comment
+✗ **API descriptions:** Use JSDoc instead
+
+### Comment Style
+
+```typescript
+// ✓ Good: Explains why
+// We limit serialization to 200 nodes to prevent >50KB MCP responses
+// that crash some AI agents. Larger designs should use search_nodes.
+const MAX_SERIALIZED_NODES = 200;
+
+// ✓ Good: Documents quirk
+// Figma plugin API doesn't support direct font file access.
+// Use getAvailableFontsAsync() with font family name only.
+const fontName = `${family}-${weight}`;
+
+// ✗ Avoid: States obvious
+// Create a frame node
+const frame = figma.createFrame();
+
+// ✗ Avoid: Too wordy
+// This variable is a string that represents the identifier
+// of a particular node within the Figma document structure.
+const nodeId = params.nodeId;
+```
+
+## Testing Strategy
+
+### Unit Test Pattern
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { YourTool } from "./your-tool";
+
+describe("yourTool", () => {
+  it("should update node properties", async () => {
+    const result = await yourTool({
+      nodeId: "123:456",
+      value: 100,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.newValue).toBe(100);
+  });
+
+  it("should handle missing nodes gracefully", async () => {
+    const result = await yourTool({
+      nodeId: "invalid:id",
+      value: 100,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+});
+```
+
+### Schema Validation Testing
+
+```typescript
+import { YourToolSchema } from "./your-tool";
+
+describe("YourToolSchema", () => {
+  it("should coerce string numbers", () => {
+    const result = YourToolSchema.parse({
+      nodeId: "123:456",
+      value: "50.5", // String number
+    });
+
+    expect(result.value).toBe(50.5);
+    expect(typeof result.value).toBe("number");
+  });
+
+  it("should reject invalid node IDs", () => {
+    expect(() =>
+      YourToolSchema.parse({
+        nodeId: 123, // Must be string
+        value: 50,
+      })
+    ).toThrow();
+  });
+});
+```
+
+## Performance Considerations
+
+### Node Operations
+
+```typescript
+// ✓ Good: Batch operations with progress_update
+async function updateManyNodes(nodeIds: string[]) {
+  for (let i = 0; i < nodeIds.length; i++) {
+    const node = figma.getNodeById(nodeIds[i]);
+    if (node) node.fills = [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }];
+
+    // Notify agent every 10 nodes
+    if (i % 10 === 0) {
+      // Send progress_update to MCP
+      sendProgress(`Updated ${i}/${nodeIds.length} nodes`);
+    }
+  }
+}
+
+// ✗ Avoid: Waiting for each operation
+// for (const nodeId of nodeIds) {
+//   await updateNode(nodeId); // Too slow
+// }
+```
+
+### Large Serialization
+
+```typescript
+// ✓ Good: Serialize with budget
+const serialized = serializeNode(root, {
+  depth: 2,
+  nodeLimit: 100, // Smaller budget
+});
+
+// ✗ Avoid: Serialize entire document
+// const serialized = serializeNode(figma.root, { depth: 10 });
+// This could create 50KB+ responses
+```
+
+## Security Guidelines
+
+### Input Validation
+
+```typescript
+// ✓ Good: Validate before use
+const nodeId = params.nodeId;
+if (!nodeId || typeof nodeId !== "string") {
+  throw new Error("nodeId must be a non-empty string");
+}
+
+// ✗ Avoid: Trust untrusted input
+// const node = figma.getNodeById(params.nodeId);
+// If params.nodeId is "" or null, this might fail silently
+```
+
+### Network Security
+
+- WebSocket: localhost only (enforced in manifest.json)
+- Auth: Optional token validation per relay channel
+- TLS: Not enforced (localhost), but supported if relay runs behind proxy
+
+### Data Sensitivity
+
+```typescript
+// ✓ Good: Don't log sensitive data
+logger.log("Color updated", { nodeId, oldColor: "red", newColor: "blue" });
+
+// ✗ Avoid: Logging user data
+// logger.log("User request", { userId, apiKey, token });
+```
+
+## Build & TypeScript Config
+
+### TypeScript Settings
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true
+  }
+}
+```
+
+**Rationale:**
+- `strict: false` — Lenient for AI agent flexibility
+- `ES2022` target — Modern Node.js capabilities
+- `declaration: true` — Generate .d.ts for API contracts
+
+### Build Output
+
+- **MCP Server:** ESM + CJS (Node 18+)
+- **Figma Plugin:** IIFE (ES2015, bundled)
+
+## Deployment Standards
+
+### Version Bumping
+
+- Patch: Bug fixes, documentation
+- Minor: New tools, non-breaking changes
+- Major: Breaking API changes, large refactors
+
+### Release Checklist
+
+- [ ] Run tests: `npm test`
+- [ ] Run linting: `npm run lint`
+- [ ] Build: `npm run build`
+- [ ] Test setup guides (README: [NPM](../README.md#option-1-npm-zero-download), [Source](../README.md#option-2-build-from-source))
+- [ ] Update CHANGELOG with version notes
+- [ ] Tag release: `git tag v0.1.1`
+- [ ] Publish: `npm publish --access public`
+
+## Common Patterns & Anti-Patterns
+
+### ✓ Do This
+
+```typescript
+// 1. Use type guards
+function updateFrame(node: SceneNode) {
+  if (node.type !== "FRAME") return;
+  node.layoutMode = "VERTICAL";
+}
+
+// 2. Return consistent response structure
+return mcpJson({ success: true, nodeId, properties });
+
+// 3. Use named exports
+export { registerMcpTools, figmaHandlers };
+
+// 4. Validate early
+const schema = z.object({ nodeId: flexString });
+const params = schema.parse(input);
+```
+
+### ✗ Don't Do This
+
+```typescript
+// 1. Avoid type assertions
+const frame = node as FrameNode; // Unsafe
+
+// 2. Inconsistent responses
+if (success) return { data }; // Sometimes has 'data'
+else return { error }; // Sometimes has 'error'
+
+// 3. Default exports (hard to find)
+export default registerMcpTools;
+
+// 4. Validate late
+figma.getNodeById(params.nodeId); // Might be undefined
+```
+
+---
+
+**Last Updated:** 2026-03-01
+**Status:** Current and enforced for all pull requests

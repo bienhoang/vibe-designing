@@ -1,0 +1,8 @@
+node_modules/
+.cursor/
+.env
+dist/
+.idea/
+certs/
+plugin/
+plans/
