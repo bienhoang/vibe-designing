@@ -114,19 +114,24 @@ When the user asks to design anything in Figma, you MUST use Vibe Designing MCP 
 - `ToolSearch` query: `"+Vibe_Designing get"` → load query tools
 - Use `get_node_info`, `get_selection` to inspect the canvas
 
-## Key Tools Reference
+## All Tools (53)
 
-- `ping` — verify connection
-- `design_workflow` — AI design recommendations (bundled, no external dependencies)
-- `create_frame` / `create_auto_layout` — containers
-- `create_text` / `set_text_content` / `set_text_properties` — text
-- `create_rectangle` / `create_ellipse` / `create_line` — shapes
-- `set_fill_color` / `set_stroke_color` — colors
-- `move_node` / `resize_node` — position and size
-- `create_component` / `create_instance_from_local` — components
-- `search_icons` / `create_icon` — 4000+ Lucide icons
-- `set_effects` — shadows, blur
-- `create_node_from_svg` — import SVG
+**Connection (4):** `ping`, `join_channel`, `channel_info`, `reset_tunnel`
+**Intelligence (1):** `design_workflow` — AI design system generator (bundled Python)
+**Create (12):** `create_frame`, `create_auto_layout`, `create_text`, `create_rectangle`, `create_ellipse`, `create_line`, `create_section`, `create_node_from_svg`, `create_boolean_operation`, `create_component`, `create_component_from_node`, `create_instance_from_local`
+**Modify (9):** `move_node`, `resize_node`, `delete_node`, `clone_node`, `insert_child`, `set_fill_color`, `set_stroke_color`, `set_corner_radius`, `set_opacity`
+**Text (3):** `set_text_content`, `set_text_properties`, `scan_text_nodes`
+**Effects (4):** `set_effects`, `set_constraints`, `set_export_settings`, `set_node_properties`
+**Layout (2):** `update_frame`, `set_image_fill`
+**Styles (9):** `get_styles`, `get_style_by_id`, `remove_style`, `create_paint_style`, `create_text_style`, `create_effect_style`, `apply_style_to_node`, `update_paint_style`, `update_text_style`
+**Variables (12):** `create_variable_collection`, `create_variable`, `set_variable_value`, `get_local_variables`, `get_local_variable_collections`, `get_variable_by_id`, `get_variable_collection_by_id`, `set_variable_binding`, `add_mode`, `rename_mode`, `remove_mode`, `set_explicit_variable_mode`, `get_node_variables`
+**Icons (3):** `search_icons`, `list_icon_sets`, `create_icon`
+**Query (6):** `get_node_info`, `get_node_css`, `search_nodes`, `export_node_as_image`, `get_selection`, `read_my_design`
+**Document (5):** `get_document_info`, `get_current_page`, `get_pages`, `set_current_page`, `create_page`, `rename_page`
+**Components (4):** `add_component_property`, `combine_as_variants`, `get_component_by_id`, `get_instance_overrides`, `set_instance_properties`
+**Selection (3):** `set_selection`, `zoom_into_view`, `set_viewport`
+**Quality (3):** `lint_node`, `lint_fix_autolayout`, `lint_fix_replace_shape_with_frame`
+**Fonts (1):** `get_available_fonts`
 INSTRUCTIONS
   echo "  Claude Code instructions: installed"
 fi
