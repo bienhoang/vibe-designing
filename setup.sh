@@ -85,38 +85,48 @@ if [ -d "$HOME/.claude" ]; then
   cat > "$HOME/.claude/rules/vibe-designing.md" << 'INSTRUCTIONS'
 # Vibe Designing — Figma MCP Tools
 
-When the user asks to design anything in Figma, you MUST use the Vibe Designing MCP tools.
+When the user asks to design anything in Figma, you MUST use Vibe Designing MCP tools directly.
 
-IMPORTANT: Do NOT use listMcpResources to find tools. The MCP server name is "Vibe Designing" (with space) but tools use underscores in their prefix. Always use ToolSearch as described below.
+## IMPORTANT — Do NOT Do These
 
-## Tool Discovery (REQUIRED)
+- Do NOT call `Skill(ui-ux-pro-max)` — design intelligence is already bundled inside Vibe Designing
+- Do NOT spawn `ui-ux-designer` or other design agents — they cannot access MCP tools
+- Do NOT use `listMcpResources` — it cannot discover deferred tools
+- Do NOT run Python scripts from `~/.claude/skills/ui-ux-pro-max/` — use the MCP `recommend_design` tool instead
 
-All Vibe Designing tools are deferred. You MUST load them via ToolSearch before use:
+## Workflow
 
-1. `ToolSearch` query: `"select:mcp__Vibe_Designing__ping"` — verify connection
-2. `ToolSearch` query: `"+Vibe_Designing create"` — load creation tools (frames, text, shapes)
-3. `ToolSearch` query: `"+Vibe_Designing set"` — load modification tools (colors, text, effects)
-4. `ToolSearch` query: `"+Vibe_Designing get"` — load query tools (node info, selection)
+### Step 1: Load tools via ToolSearch (REQUIRED — all tools are deferred)
+- `ToolSearch` query: `"select:mcp__Vibe_Designing__ping"` → call `ping` to verify Figma connection
+- `ToolSearch` query: `"select:mcp__Vibe_Designing__recommend_design"` → load design intelligence
 
-## Quick Start
+### Step 2: Get design recommendations
+- Call `recommend_design` with the design brief — it runs bundled Python scripts and returns style, colors, typography, and layout recommendations
+- Use these recommendations for the design
 
-1. Load & call `ping` to verify Figma connection
-2. Load creation tools, then use `create_frame`, `create_text`, `create_rectangle`, etc.
-3. Use `set_fill_color`, `set_text_content`, `set_text_properties` to style elements
-4. Use `get_node_info`, `get_selection` to inspect what's on the canvas
+### Step 3: Load creation tools and build in Figma
+- `ToolSearch` query: `"+Vibe_Designing create"` → load creation tools
+- `ToolSearch` query: `"+Vibe_Designing set"` → load modification tools
+- Call MCP tools directly: `create_frame`, `create_text`, `set_fill_color`, etc.
+- Load more tools as needed with ToolSearch
 
-## Key Tools
+### Step 4: Load query tools if needed
+- `ToolSearch` query: `"+Vibe_Designing get"` → load query tools
+- Use `get_node_info`, `get_selection` to inspect the canvas
+
+## Key Tools Reference
 
 - `ping` — verify connection
-- `create_frame` — create frames/containers
-- `create_text` — create text nodes
-- `create_rectangle` / `create_ellipse` — create shapes
-- `set_fill_color` / `set_stroke_color` — set colors
-- `set_text_content` / `set_text_properties` — modify text
+- `recommend_design` — AI design recommendations (bundled, no external dependencies)
+- `create_frame` / `create_auto_layout` — containers
+- `create_text` / `set_text_content` / `set_text_properties` — text
+- `create_rectangle` / `create_ellipse` / `create_line` — shapes
+- `set_fill_color` / `set_stroke_color` — colors
 - `move_node` / `resize_node` — position and size
-- `create_auto_layout` — auto-layout containers
-- `create_component` — create reusable components
-- `search_icons` / `create_icon` — search and place icons
+- `create_component` / `create_instance_from_local` — components
+- `search_icons` / `create_icon` — 4000+ Lucide icons
+- `set_effects` — shadows, blur
+- `create_node_from_svg` — import SVG
 INSTRUCTIONS
   echo "  Claude Code instructions: installed"
 fi
