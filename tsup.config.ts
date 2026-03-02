@@ -14,6 +14,8 @@ export default defineConfig([
     minify: false,
     splitting: false,
     bundle: true,
+    // Bundle all deps so the release zip works without npm install
+    noExternal: [/.*/],
   },
   // Standalone Tunnel → dist/tunnel.js (for Docker)
   {
@@ -25,6 +27,8 @@ export default defineConfig([
     minify: false,
     splitting: false,
     bundle: true,
+    // Bundle all deps so the release zip works without npm install
+    noExternal: [/.*/],
   },
   // Figma Plugin → plugin/code.js (IIFE for Figma sandbox)
   {
