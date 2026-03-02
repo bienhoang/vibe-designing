@@ -92,16 +92,16 @@ When the user asks to design anything in Figma, you MUST use Vibe Designing MCP 
 - Do NOT call `Skill(ui-ux-pro-max)` — design intelligence is already bundled inside Vibe Designing
 - Do NOT spawn `ui-ux-designer` or other design agents — they cannot access MCP tools
 - Do NOT use `listMcpResources` — it cannot discover deferred tools
-- Do NOT run Python scripts from `~/.claude/skills/ui-ux-pro-max/` — use the MCP `recommend_design` tool instead
+- Do NOT run Python scripts from `~/.claude/skills/ui-ux-pro-max/` — use the MCP `design_workflow` tool instead
 
 ## Workflow
 
 ### Step 1: Load tools via ToolSearch (REQUIRED — all tools are deferred)
 - `ToolSearch` query: `"select:mcp__Vibe_Designing__ping"` → call `ping` to verify Figma connection
-- `ToolSearch` query: `"select:mcp__Vibe_Designing__recommend_design"` → load design intelligence
+- `ToolSearch` query: `"select:mcp__Vibe_Designing__design_workflow"` → load design intelligence
 
 ### Step 2: Get design recommendations
-- Call `recommend_design` with the design brief — it runs bundled Python scripts and returns style, colors, typography, and layout recommendations
+- Call `design_workflow` with the design brief — it runs bundled Python scripts and returns style, colors, typography, and layout recommendations
 - Use these recommendations for the design
 
 ### Step 3: Load creation tools and build in Figma
@@ -117,7 +117,7 @@ When the user asks to design anything in Figma, you MUST use Vibe Designing MCP 
 ## Key Tools Reference
 
 - `ping` — verify connection
-- `recommend_design` — AI design recommendations (bundled, no external dependencies)
+- `design_workflow` — AI design recommendations (bundled, no external dependencies)
 - `create_frame` / `create_auto_layout` — containers
 - `create_text` / `set_text_content` / `set_text_properties` — text
 - `create_rectangle` / `create_ellipse` / `create_line` — shapes
