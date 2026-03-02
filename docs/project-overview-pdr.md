@@ -243,8 +243,6 @@ Uses local WebSocket relay instead of direct plugin communication because:
 
 - **Repository:** https://github.com/bienhoang/vibe-designing
 - **npm:** @bienhoang/vibe-designing (MCP server), @bienhoang/vibe-designing-tunnel (relay)
-- **Discord:** https://discord.gg/4XTedZdwV6
-- **Demo:** https://youtu.be/AltDYHHZrcY
 
 ## License
 

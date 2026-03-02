@@ -208,23 +208,30 @@ async function joinChannel(channelName: string): Promise<void> {
 
 // ─── Send command to Figma ───────────────────────────────────────
 
-function sendCommandToFigma(
+const DEFAULT_CHANNEL = "vibe-designing";
+
+async function sendCommandToFigma(
   command: string,
   params: unknown = {},
   timeoutMs: number = 30000
 ): Promise<unknown> {
-  return new Promise((resolve, reject) => {
+  // Auto-connect WebSocket if not connected
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    connectToFigma();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      connectToFigma();
-      reject(new Error("Not connected to Figma. Attempting to connect..."));
-      return;
+      throw new Error("Not connected to relay. Is the MCP server running?");
     }
+  }
 
-    const requiresChannel = command !== "join";
-    if (requiresChannel && !currentChannel) {
-      reject(new Error("No channel joined. Call join_channel first with the channel name shown in the Figma plugin panel."));
-      return;
-    }
+  // Auto-join default channel on first tool call
+  const requiresChannel = command !== "join";
+  if (requiresChannel && !currentChannel) {
+    logger.info(`Auto-joining default channel "${DEFAULT_CHANNEL}"...`);
+    await joinChannel(DEFAULT_CHANNEL);
+  }
+
+  return new Promise((resolve, reject) => {
 
     const id = uuidv4();
     const request = {
@@ -272,7 +279,7 @@ const server = new McpServer({
 // Register the join_channel tool directly (it uses local state)
 server.tool(
   "join_channel",
-  "REQUIRED FIRST STEP: Join a channel before using any other tool. The channel name is shown in the Figma plugin UI (defaults to 'vibe-designing' if not customised). After joining, call `ping` to verify the Figma plugin is connected. All subsequent commands are sent through this channel.",
+  "Join a specific channel. Usually not needed — the MCP server auto-joins the default channel ('vibe-designing') on first tool call. Only call this to switch to a different channel name. After joining, call `ping` to verify the Figma plugin is connected.",
   { channel: z.string().describe("The channel name displayed in the Figma plugin panel. Defaults to 'vibe-designing' if omitted.").default("vibe-designing") },
   async ({ channel }: any) => {
     try {

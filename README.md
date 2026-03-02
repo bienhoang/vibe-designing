@@ -18,7 +18,7 @@ Let AI agents design directly in Figma through natural conversation. Read layout
 - [What You Can Do](#what-you-can-do)
 - [Setup](#setup)
   - [Prerequisites](#prerequisites)
-  - [Option 1: NPM (Recommended)](#option-1-npm-recommended)
+  - [Option 1: Quick Install (Recommended)](#option-1-quick-install-recommended)
   - [Option 2: Build from Source](#option-2-build-from-source)
   - [About Ports](#about-ports)
   - [Connect](#connect)
@@ -61,26 +61,31 @@ See full [tool reference](./docs/codebase-summary.md#tool-categories-50-tools).
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org) (v18+)
+- [Node.js](https://nodejs.org) (v18+) — required for the MCP server
 - [Figma](https://figma.com) desktop or web app
 - An AI coding tool with MCP support (Claude Code, Cursor, etc.)
 - **Best LLM:** Claude Opus 4.6 (consistent results). GPT models less reliable.
 
-### Option 1: NPM (Recommended)
+### Option 1: Quick Install (Recommended)
 
-Two steps — download the plugin and configure your AI tool. The MCP server includes a built-in WebSocket relay, so no separate tunnel process is needed.
-
-#### 1. Download the Figma plugin
+One command — downloads the Figma plugin and configures your AI tool automatically. The MCP server includes a built-in WebSocket relay, so no separate tunnel process is needed.
 
 ```bash
-npx @bienhoang/vibe-designing --setup
+curl -fsSL https://raw.githubusercontent.com/bienhoang/vibe-designing/main/setup.sh | bash
 ```
 
-This downloads the latest plugin to `~/.vibe-designing/plugin/`. In Figma, go to **Plugins > Development > Import plugin from manifest...** and select the `manifest.json` from the path shown in the terminal output.
+This will:
+1. Download the latest plugin to `~/.vibe-designing/plugin/`
+2. Auto-configure the MCP server in detected AI tools (Claude Code, Cursor, Windsurf)
 
-#### 2. Configure MCP in your AI tool
+After running, import the plugin in Figma: **Plugins > Development > Import plugin from manifest...** and select the `manifest.json` path shown in the terminal output.
 
-Add to your MCP config (e.g. `.cursor/mcp.json`, `.claude.json`, or `.mcp.json`):
+Then continue to [Connect](#connect).
+
+<details>
+<summary>Manual MCP configuration</summary>
+
+If the setup script didn't detect your AI tool, add this to your MCP config (e.g. `.cursor/mcp.json`, `.claude.json`, or `.mcp.json`):
 
 ```json
 {
@@ -93,22 +98,9 @@ Add to your MCP config (e.g. `.cursor/mcp.json`, `.claude.json`, or `.mcp.json`)
 }
 ```
 
-The MCP server automatically starts a built-in WebSocket relay on the first available port (3055–3058). No separate tunnel needed.
+To use a specific port: add `"--port=3056"` to the `args` array.
 
-If you need a specific port:
-
-```json
-{
-  "mcpServers": {
-    "Vibe Designing": {
-      "command": "npx",
-      "args": ["-y", "@bienhoang/vibe-designing", "--port=3056"]
-    }
-  }
-}
-```
-
-Then continue to [Connect](#connect).
+</details>
 
 ---
 
@@ -180,10 +172,11 @@ If the auto-selected port differs from the default (3055), update the **port fie
 
 ### Connect
 
-1. In the Figma plugin, set the channel name to `vibe-designing` (or any name you like)
-2. Click **Connect**
-3. In your AI tool, call `join_channel` with the same channel name (defaults to `vibe-designing`)
-4. Call `ping` — you should get back `pong` with your document name
+1. In the Figma plugin, click **Connect** (channel defaults to `vibe-designing`)
+2. In your AI tool, call any design tool — the MCP server auto-joins the default channel
+3. Call `ping` to verify — you should get back `pong` with your document name
+
+> **Custom channel?** Call `join_channel` with a different name before other tools. The Figma plugin channel name must match.
 
 #### Channel rules
 
@@ -217,7 +210,7 @@ If using Claude Code, the `channel_info` MCP tool returns the same data without 
 
 **Port already in use**: The MCP server auto-scans ports 3055–3058. If all are busy, kill the existing process (`lsof -ti:3055 | xargs kill`) or set a specific port with `--port=`.
 
-**`--setup` fails**: Check your internet connection. The command downloads from GitHub Releases. If it fails, manually download from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases) and unzip to `~/.vibe-designing/plugin/`.
+**Setup fails**: Check your internet connection. Both `curl` and `--setup` download from GitHub Releases. If they fail, manually download from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases) and unzip to `~/.vibe-designing/plugin/`.
 
 **Version mismatch warning** (source build): The plugin and MCP server are running different versions. Run `npm run build` and restart both to resolve.
 
@@ -227,11 +220,19 @@ If using Claude Code, the `channel_info` MCP tool returns the same data without 
 
 The section below is for AI agents setting up Vibe Designing on behalf of a user. Follow these steps in order.
 
-#### Plugin download (NPM setup only)
+#### Plugin download
 
-Run `npx @bienhoang/vibe-designing --setup` to download and extract the plugin automatically. Tell the user the full path to the `manifest.json` so they can import it in Figma.
+Run the setup script to download and extract the plugin automatically:
 
-If `--setup` fails, download the latest **vibe-designing-plugin** zip from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases), unzip to `~/.vibe-designing/plugin/`, and tell the user the path.
+```bash
+curl -fsSL https://raw.githubusercontent.com/bienhoang/vibe-designing/main/setup.sh | bash
+```
+
+Or with npx: `npx @bienhoang/vibe-designing --setup`
+
+Tell the user the full path to the `manifest.json` so they can import it in Figma.
+
+If both methods fail, download the latest **vibe-designing-plugin** zip from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases), unzip to `~/.vibe-designing/plugin/`, and tell the user the path.
 
 #### Port resolution
 
@@ -243,18 +244,16 @@ If the user needs a specific port, pass `--port=<port>` in the MCP config args.
 
 After the user opens the Figma plugin, it should automatically show **Connected** on the default port (3055). If the MCP server auto-selected a different port, the user will need to update the port in the plugin UI and click Connect.
 
-1. Call `join_channel` (defaults to channel `vibe-designing` — use a different name only if the user specifies one).
-2. Call `ping`. Expected response: `{ status: "pong", documentName: "...", currentPage: "...", timestamp: ... }`
+1. Call `ping`. The MCP server auto-joins the default channel (`vibe-designing`) on first tool call.
+2. Expected response: `{ status: "pong", documentName: "...", currentPage: "...", timestamp: ... }`
 
-If `ping` returns a `pong` with a document name, the full chain is verified. Proceed with design tasks.
+If `ping` returns a `pong` with a document name, the full chain is verified. Proceed with design tasks. Only call `join_channel` if the user specifies a custom channel name.
 
 #### Troubleshooting connection issues
 
 If the plugin shows **Disconnected**, the MCP server (which includes the relay) may not be running. Restart your AI tool to restart the MCP server.
 
 If `join_channel` fails with a `ROLE_OCCUPIED` error, another MCP server is already connected to that channel. Use `channel_info` (or `curl http://localhost:3055/channels`) to inspect who's connected. The user needs to disconnect the other MCP client or use a different channel name.
-
-If the issue persists after these steps, direct the user to the [Vibe Designing Discord](https://discord.gg/4XTedZdwV6) for help.
 
 If any tool times out after a successful `join_channel`, the Figma plugin is not connected to the relay. The timeout error will include the port and channel the MCP server is using. Ask the user to check the Vibe Designing plugin window and confirm:
 - The **port** matches what MCP is using
@@ -291,7 +290,7 @@ If any tool times out after a successful `join_channel`, the Figma plugin is not
 
 ## Status
 
-**Version:** 0.2.0 (Stable, Production Ready)
+**Version:** 0.3.0 (Stable, Production Ready)
 
 **Features:** 50+ design tools, WCAG linting, design tokens, real-time sync
 
@@ -302,7 +301,6 @@ If any tool times out after a successful `join_channel`, the Figma plugin is not
 ## Community
 
 - **[GitHub Issues](https://github.com/bienhoang/vibe-designing/issues)** — bugs and features
-- **[Discord](https://discord.gg/4XTedZdwV6)** — chat and support
 - **Contributing:** See CONTRIBUTING.md (coming soon)
 
 ## License & Attribution

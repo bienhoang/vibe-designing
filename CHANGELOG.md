@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adhering to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-02
+
+### Added
+
+- One-line installer: `curl -fsSL .../setup.sh | bash` downloads plugin + auto-configures MCP
+- Auto-connect: MCP server auto-joins default channel on first tool call (no manual `join_channel` needed)
+- `setup.sh` detects and configures Claude Code, Cursor, and Windsurf automatically
+
+### Changed
+
+- Plugin UI switched from dark to light theme using Figma's official CSS variables (`--figma-color-*`)
+- Plugin UI font sizes and input heights aligned to Figma design system (12px body, 32px inputs)
+- `join_channel` no longer required as first step — kept for custom channel names only
+- README simplified: curl-first install, auto-connect flow, manual config in collapsible `<details>`
+- Plugin version bumped to 0.3.0
+
+### Fixed
+
+- `.gitignore` `plugin/` → `/plugin/` so `src/plugin/` source files are tracked in git
+
 ## [0.2.0] - 2026-03-02
 
 ### Added
@@ -51,5 +71,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adheri
 - Component and style management
 - SVG import and boolean operations
 
-[0.2.0]: https://github.com/bienhoang/vibe-designing/compare/c6538b5...main
+[0.3.0]: https://github.com/bienhoang/vibe-designing/compare/v0.2.0...main
+[0.2.0]: https://github.com/bienhoang/vibe-designing/compare/c6538b5...v0.2.0
 [0.1.0]: https://github.com/bienhoang/vibe-designing/releases/tag/c6538b5

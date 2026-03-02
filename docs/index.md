@@ -175,8 +175,6 @@ All documentation uses relative links within `./docs/`. Update carefully:
 
 - **GitHub:** https://github.com/bienhoang/vibe-designing
 - **npm:** @bienhoang/vibe-designing (MCP server), @bienhoang/vibe-designing-tunnel (relay)
-- **Discord:** https://discord.gg/4XTedZdwV6
-- **Demo:** https://youtu.be/AltDYHHZrcY
 
 ## Version Info
 

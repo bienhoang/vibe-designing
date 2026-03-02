@@ -740,7 +740,6 @@ npm run build
 ## Support
 
 - **Issues:** https://github.com/bienhoang/vibe-designing/issues
-- **Discord:** https://discord.gg/4XTedZdwV6
 - **Docs:** https://github.com/bienhoang/vibe-designing/docs
 
 ---

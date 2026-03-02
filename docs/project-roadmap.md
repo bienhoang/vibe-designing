@@ -408,7 +408,7 @@ Phase 5 (Cloud)
 - Fix typos
 
 **Community:**
-- Answer questions on Discord/GitHub
+- Answer questions on GitHub
 - Share designs created with Vibe Designing
 - Report bugs with reproducible steps
 - Suggest features with use cases
