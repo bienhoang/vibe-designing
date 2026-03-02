@@ -5,5 +5,5 @@ dist/
 src/tools/_*.generated.ts
 .idea/
 certs/
-plugin/
+/plugin/
 plans/
