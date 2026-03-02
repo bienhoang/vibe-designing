@@ -185,7 +185,7 @@ vibe-designing/
 **server/cli-setup.ts** — Plugin Auto-Download
 - Implements `npx @bienhoang/vibe-designing --setup`
 - Downloads Figma plugin from GitHub Releases
-- Extracts to `~/.vibe-designing/plugin/`
+- Extracts to `~/vibe-designing/plugin/`
 - Zero-friction plugin installation
 
 ## Dependency Graph

@@ -5,7 +5,7 @@ import { homedir, tmpdir } from "os";
 import { spawnSync } from "child_process";
 
 const GITHUB_API = "https://api.github.com/repos/bienhoang/vibe-designing/releases/latest";
-const PLUGIN_DIR = join(homedir(), ".vibe-designing", "plugin");
+const PLUGIN_DIR = join(homedir(), "vibe-designing", "plugin");
 const ASSET_PATTERN = /vibe-designing-plugin.*\.zip$/i;
 const MAX_REDIRECTS = 5;
 const SAFE_HOSTS = ["github.com", "githubusercontent.com", "objects.githubusercontent.com"];

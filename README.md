@@ -75,7 +75,7 @@ curl -fsSL https://raw.githubusercontent.com/bienhoang/vibe-designing/main/setup
 ```
 
 This will:
-1. Download the latest plugin to `~/.vibe-designing/plugin/`
+1. Download the latest plugin to `~/vibe-designing/plugin/`
 2. Auto-configure the MCP server in detected AI tools (Claude Code, Cursor, Windsurf)
 
 After running, import the plugin in Figma: **Plugins > Development > Import plugin from manifest...** and select the `manifest.json` path shown in the terminal output.
@@ -210,7 +210,7 @@ If using Claude Code, the `channel_info` MCP tool returns the same data without 
 
 **Port already in use**: The MCP server auto-scans ports 3055–3058. If all are busy, kill the existing process (`lsof -ti:3055 | xargs kill`) or set a specific port with `--port=`.
 
-**Setup fails**: Check your internet connection. Both `curl` and `--setup` download from GitHub Releases. If they fail, manually download from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases) and unzip to `~/.vibe-designing/plugin/`.
+**Setup fails**: Check your internet connection. Both `curl` and `--setup` download from GitHub Releases. If they fail, manually download from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases) and unzip to `~/vibe-designing/plugin/`.
 
 **Version mismatch warning** (source build): The plugin and MCP server are running different versions. Run `npm run build` and restart both to resolve.
 
@@ -232,7 +232,7 @@ Or with npx: `npx @bienhoang/vibe-designing --setup`
 
 Tell the user the full path to the `manifest.json` so they can import it in Figma.
 
-If both methods fail, download the latest **vibe-designing-plugin** zip from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases), unzip to `~/.vibe-designing/plugin/`, and tell the user the path.
+If both methods fail, download the latest **vibe-designing-plugin** zip from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases), unzip to `~/vibe-designing/plugin/`, and tell the user the path.
 
 #### Port resolution
 

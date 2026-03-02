@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO="bienhoang/vibe-designing"
-PLUGIN_DIR="$HOME/.vibe-designing/plugin"
+PLUGIN_DIR="$HOME/vibe-designing/plugin"
 API_URL="https://api.github.com/repos/$REPO/releases/latest"
 MCP_ENTRY='{"command":"npx","args":["-y","@bienhoang/vibe-designing"]}'
 
