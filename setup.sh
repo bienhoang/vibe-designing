@@ -78,6 +78,47 @@ if [ -d "$HOME/.codeium/windsurf" ]; then
   configure_mcp "$WINDSURF_CONFIG" "Windsurf"
 fi
 
+# --- Step 3: Install Claude Code instructions for tool discovery ---
+# Deferred tools require ToolSearch — this instruction ensures the model discovers them.
+if [ -d "$HOME/.claude" ]; then
+  mkdir -p "$HOME/.claude/rules"
+  cat > "$HOME/.claude/rules/vibe-designing.md" << 'INSTRUCTIONS'
+# Vibe Designing — Figma MCP Tools
+
+When the user asks to design anything in Figma, you MUST use the Vibe Designing MCP tools.
+
+## Tool Discovery (REQUIRED)
+
+All Vibe Designing tools are deferred. You must load them via ToolSearch before use:
+
+1. `ToolSearch` query: `"select:mcp__Vibe_Designing__ping"` — verify connection
+2. `ToolSearch` query: `"+Vibe_Designing create"` — load creation tools (frames, text, shapes)
+3. `ToolSearch` query: `"+Vibe_Designing set"` — load modification tools (colors, text, effects)
+4. `ToolSearch` query: `"+Vibe_Designing get"` — load query tools (node info, selection)
+
+## Quick Start
+
+1. Load & call `ping` to verify Figma connection
+2. Load creation tools, then use `create_frame`, `create_text`, `create_rectangle`, etc.
+3. Use `set_fill_color`, `set_text_content`, `set_text_properties` to style elements
+4. Use `get_node_info`, `get_selection` to inspect what's on the canvas
+
+## Key Tools
+
+- `ping` — verify connection
+- `create_frame` — create frames/containers
+- `create_text` — create text nodes
+- `create_rectangle` / `create_ellipse` — create shapes
+- `set_fill_color` / `set_stroke_color` — set colors
+- `set_text_content` / `set_text_properties` — modify text
+- `move_node` / `resize_node` — position and size
+- `create_auto_layout` — auto-layout containers
+- `create_component` — create reusable components
+- `search_icons` / `create_icon` — search and place icons
+INSTRUCTIONS
+  echo "  Claude Code instructions: installed"
+fi
+
 # --- Done ---
 echo ""
 echo "Setup complete! ($TAG)"
