@@ -297,13 +297,6 @@
         </div>
 
         <div id="port-container">
-          <label for="port">WebSocket Server Port</label>
-          <select id="port">
-            <option value="3055" selected>3055</option>
-            <option value="3056">3056</option>
-            <option value="3057">3057</option>
-            <option value="3058">3058</option>
-          </select>
           <label for="channel-name">Channel Name</label>
           <input type="text" id="channel-name" placeholder="vibe-designing" value="vibe-designing" maxlength="32" />
         </div>
@@ -367,7 +360,7 @@
   </div>
 
   <script>
-    const VIBE_DESIGNING_VERSION = "0.7.0";
+    const VIBE_DESIGNING_VERSION = "0.7.1";
 
     // WebSocket connection state
     const state = {
@@ -384,8 +377,10 @@
     // Set version badge
     document.getElementById("version-badge").textContent = `v${VIBE_DESIGNING_VERSION}`;
 
+    // Allowed port range — must match MCP server's port-scanner.ts
+    const ALLOWED_PORTS = [3055, 3056, 3057, 3058];
+
     // UI Elements
-    const portInput = document.getElementById("port");
     const channelInput = document.getElementById("channel-name");
     const connectButton = document.getElementById("btn-connect");
     const connectionStatus = document.getElementById("connection-status");
@@ -439,9 +434,40 @@
       // Update connect button text and style based on connection state
       connectButton.textContent = isConnected ? "Disconnect" : "Connect";
       connectButton.className = isConnected ? "secondary" : "primary";
-      portInput.disabled = isConnected;
       channelInput.disabled = isConnected;
 
+    }
+
+    /** Probe a single port — resolves true if WebSocket connects within timeout */
+    function probePort(port, timeoutMs = 800) {
+      return new Promise((resolve) => {
+        const ws = new WebSocket(`ws://localhost:${port}`);
+        const timer = setTimeout(() => { ws.close(); resolve(false); }, timeoutMs);
+        ws.onopen = () => { clearTimeout(timer); ws.close(); resolve(true); };
+        ws.onerror = () => { clearTimeout(timer); resolve(false); };
+      });
+    }
+
+    /** Scan all allowed ports and connect to the first one that responds */
+    async function autoConnect() {
+      updateConnectionStatus(false, "Scanning ports...");
+      connectionStatus.className = "status info";
+
+      // Race all ports in parallel — first to respond wins
+      const results = await Promise.all(
+        ALLOWED_PORTS.map(async (port) => ({ port, alive: await probePort(port) }))
+      );
+      const found = results.find((r) => r.alive);
+
+      if (found) {
+        updateConnectionStatus(false, `Found relay on port ${found.port}, connecting...`);
+        connectionStatus.className = "status info";
+        connectToServer(found.port);
+      } else {
+        updateConnectionStatus(false,
+          "No relay found on ports 3055–3058.<br>Start your AI tool (it runs the MCP server automatically)."
+        );
+      }
     }
 
     // Connect to WebSocket server
@@ -729,7 +755,7 @@
 
     // Reset tunnel — factory reset via HTTP, then reconnect fresh
     document.getElementById("btn-reset").addEventListener("click", async () => {
-      const port = parseInt(portInput.value, 10) || 3055;
+      const port = state.serverPort || 3055;
       const channel = channelInput.value.trim() || "vibe-designing";
 
       // Force-kill local socket
@@ -767,10 +793,7 @@
         connectionStatus.className = "status info";
         disconnectFromServer();
       } else {
-        const port = parseInt(portInput.value, 10) || 3055;
-        updateConnectionStatus(false, "Connecting...");
-        connectionStatus.className = "status info";
-        connectToServer(port);
+        autoConnect();
       }
     });
 
@@ -851,7 +874,7 @@
 
       switch (message.type) {
         case "restore-settings":
-          if (message.serverPort) portInput.value = message.serverPort;
+          if (message.serverPort) state.serverPort = message.serverPort;
           if (message.channelName) channelInput.value = message.channelName;
           break;
         case "connection-status":

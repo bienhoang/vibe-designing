@@ -1,7 +1,7 @@
 {
   "name": "@bienhoang/vibe-designing",
   "description": "Vibe Designing — AI-powered MCP bridge for designing in Figma.",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "license": "MIT",
   "author": "bienhoang <https://github.com/bienhoang>",
   "homepage": "https://github.com/bienhoang/vibe-designing",

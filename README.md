@@ -166,15 +166,13 @@ Then continue to [Connect](#connect).
 
 ### About Ports
 
-The MCP server automatically scans ports **3055–3058** and picks the first available one. The Figma plugin whitelists these same ports.
+The MCP server automatically scans ports **3055–3058** and picks the first available one. If all are occupied by stale MCP processes, it kills them and reclaims the port. The Figma plugin auto-scans the same range on Connect.
 
 To force a specific port: pass `--port=3056` to the MCP server, or set `VIBE_DESIGNING_PORT=3056`.
 
-If the auto-selected port differs from the default (3055), update the **port field in the Figma plugin UI** before clicking Connect. The MCP server logs which port it started on to stderr.
-
 ### Connect
 
-1. In the Figma plugin, click **Connect** (channel defaults to `vibe-designing`)
+1. In the Figma plugin, click **Connect** — it auto-scans ports 3055–3058 and finds the relay
 2. In your AI tool, ask: **"Use the ping tool"** — the MCP server auto-joins the default channel
 3. You should get back `pong` with your Figma document name
 
@@ -306,7 +304,7 @@ Without Python 3, you can still provide design specs manually to create Figma de
 
 ## Status
 
-**Version:** 0.7.0 (Stable, Production Ready)
+**Version:** 0.7.1 (Stable, Production Ready)
 
 **Features:** 50+ design tools, WCAG linting, design tokens, real-time sync
 
