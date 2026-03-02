@@ -1,5 +1,7 @@
 import { defineConfig } from 'tsup';
-import { copyFileSync } from 'fs';
+import { copyFileSync, readFileSync } from 'fs';
+
+const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 
 export default defineConfig([
   // MCP Server → dist/mcp.{cjs,js}
@@ -16,6 +18,8 @@ export default defineConfig([
     bundle: true,
     // Bundle all deps so the release zip works without npm install
     noExternal: [/.*/],
+    // Inject version at build time so it works without package.json
+    define: { 'process.env.VIBE_DESIGNING_VERSION': JSON.stringify(pkg.version) },
   },
   // Standalone Tunnel → dist/tunnel.js (for Docker)
   {

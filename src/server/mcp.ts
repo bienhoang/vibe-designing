@@ -12,18 +12,19 @@ import { createTunnelServer } from "./tunnel";
 import { findAvailablePort } from "./port-scanner";
 import { runSetup } from "./cli-setup";
 
-// Read version — works with both tsx (source) and node (compiled dist/)
-let VIBE_DESIGNING_VERSION = "0.0.0";
-try {
-  // Walk up from current file's dir to find package.json
-  const start = typeof __dirname !== "undefined" ? __dirname : process.cwd();
-  for (let dir = start; dir !== "/"; dir = join(dir, "..")) {
-    try {
-      const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
-      if (pkg.name === "@bienhoang/vibe-designing") { VIBE_DESIGNING_VERSION = pkg.version; break; }
-    } catch { continue; }
-  }
-} catch { /* fallback */ }
+// Version: injected at build time via tsup define, fallback to package.json walk for dev
+let VIBE_DESIGNING_VERSION = process.env.VIBE_DESIGNING_VERSION || "0.0.0";
+if (VIBE_DESIGNING_VERSION === "0.0.0") {
+  try {
+    const start = typeof __dirname !== "undefined" ? __dirname : process.cwd();
+    for (let dir = start; dir !== "/"; dir = join(dir, "..")) {
+      try {
+        const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+        if (pkg.name === "@bienhoang/vibe-designing") { VIBE_DESIGNING_VERSION = pkg.version; break; }
+      } catch { continue; }
+    }
+  } catch { /* fallback */ }
+}
 
 // ─── Logger (stderr so it doesn't pollute MCP stdio) ────────────
 const logger = {
