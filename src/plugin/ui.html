@@ -5,13 +5,16 @@
   <meta charset="utf-8" />
   <title>Vibe Designing Plugin</title>
   <style>
+    /* Figma Design System — Light Theme */
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-        Helvetica, Arial, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
-      padding: 20px;
-      color: #e0e0e0;
-      background-color: #1e1e1e;
+      padding: 16px;
+      color: var(--figma-color-text, #333333);
+      background-color: var(--figma-color-bg, #ffffff);
+      font-size: 12px;
+      line-height: 1.4;
     }
 
     .container {
@@ -21,93 +24,115 @@
     }
 
     h1 {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
-      margin-bottom: 10px;
-      color: #ffffff;
+      margin-bottom: 8px;
+      color: var(--figma-color-text, #333333);
     }
 
     h2 {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
-      margin-top: 20px;
+      margin-top: 16px;
       margin-bottom: 8px;
-      color: #ffffff;
+      color: var(--figma-color-text, #333333);
+    }
+
+    p {
+      font-size: 12px;
+      color: var(--figma-color-text-secondary, #00000080);
+      line-height: 1.5;
     }
 
     button {
-      background-color: #18a0fb;
+      background-color: var(--figma-color-bg-brand, #0d99ff);
       border: none;
-      color: white;
-      padding: 8px 12px;
+      color: #ffffff;
+      padding: 0 16px;
+      height: 32px;
       border-radius: 6px;
       margin-top: 8px;
       margin-bottom: 8px;
       cursor: pointer;
-      font-size: 14px;
-      transition: background-color 0.2s;
+      font-size: 12px;
+      font-weight: 500;
+      transition: opacity 0.2s;
     }
 
     button:hover {
-      background-color: #0d8ee0;
+      opacity: 0.85;
     }
 
     button.secondary {
-      background-color: #3d3d3d;
-      color: #e0e0e0;
+      background-color: var(--figma-color-bg-secondary, #f5f5f5);
+      color: var(--figma-color-text, #333333);
+      border: 1px solid var(--figma-color-border, #e6e6e6);
     }
 
     button.secondary:hover {
-      background-color: #4d4d4d;
+      background-color: #ebebeb;
     }
 
     button:disabled {
-      background-color: #333333;
-      color: #666666;
+      background-color: var(--figma-color-bg-secondary, #f5f5f5);
+      color: var(--figma-color-text-tertiary, #0000004d);
       cursor: not-allowed;
+      opacity: 1;
     }
 
     input,
     select {
-      border: 1px solid #444444;
-      border-radius: 4px;
-      padding: 8px;
+      border: 1px solid var(--figma-color-border, #e6e6e6);
+      border-radius: 2px;
+      padding: 6px 8px;
       margin-bottom: 12px;
-      font-size: 14px;
+      font-size: 12px;
       width: 100%;
       box-sizing: border-box;
-      background-color: #2d2d2d;
-      color: #e0e0e0;
+      background-color: var(--figma-color-bg, #ffffff);
+      color: var(--figma-color-text, #333333);
+      height: 32px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--figma-color-border-brand, #0d99ff);
+      box-shadow: 0 0 0 1px var(--figma-color-border-brand, #0d99ff);
     }
 
     label {
       display: block;
       margin-bottom: 4px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
-      color: #cccccc;
+      color: var(--figma-color-text-secondary, #00000080);
     }
 
     .status {
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 6px;
-      font-size: 14px;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.5;
     }
 
     .status.connected {
-      background-color: #1a472a;
-      color: #4ade80;
+      background-color: #e6f9ee;
+      color: #009951;
+      border: 1px solid #aff4c6;
     }
 
     .status.disconnected {
-      background-color: #471a1a;
-      color: #ff9999;
+      background-color: #fff0ee;
+      color: #dc3412;
+      border: 1px solid #ffc7c2;
     }
 
     .status.info {
-      background-color: #1a3147;
-      color: #66b3ff;
+      background-color: #e8f4ff;
+      color: #007be5;
+      border: 1px solid #bde3ff;
     }
 
     .toggle-container {
@@ -119,8 +144,8 @@
     .toggle-switch {
       position: relative;
       display: inline-block;
-      width: 40px;
-      height: 20px;
+      width: 36px;
+      height: 18px;
       margin-right: 8px;
     }
 
@@ -138,82 +163,86 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: #444444;
-      transition: 0.4s;
-      border-radius: 20px;
+      background-color: #ccc;
+      transition: 0.2s;
+      border-radius: 18px;
     }
 
     .toggle-slider:before {
       position: absolute;
       content: "";
-      height: 16px;
-      width: 16px;
+      height: 14px;
+      width: 14px;
       left: 2px;
       bottom: 2px;
-      background-color: white;
-      transition: 0.4s;
+      background-color: #ffffff;
+      transition: 0.2s;
       border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
     }
 
     input:checked+.toggle-slider {
-      background-color: #18a0fb;
+      background-color: var(--figma-color-bg-brand, #0d99ff);
     }
 
     input:checked+.toggle-slider:before {
-      transform: translateX(20px);
+      transform: translateX(18px);
     }
 
     .section {
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .hidden {
       display: none;
     }
 
-    .logo {
-      width: 50px;
-      height: 50px;
-    }
-
     .header {
       display: flex;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .header-text {
-      margin-left: 12px;
+      margin-left: 0;
     }
 
     .header-text h1 {
       margin: 0;
-      font-size: 16px;
+      font-size: 14px;
     }
 
     .header-text p {
-      margin: 4px 0 0 0;
-      font-size: 12px;
-      color: #999999;
+      margin: 2px 0 0 0;
+      font-size: 11px;
+      color: var(--figma-color-text-secondary, #00000080);
     }
 
     .tabs {
       display: flex;
-      border-bottom: 1px solid #444444;
-      margin-bottom: 16px;
+      border-bottom: 1px solid var(--figma-color-border, #e6e6e6);
+      margin-bottom: 12px;
+      gap: 4px;
     }
 
     .tab {
-      padding: 8px 16px;
+      padding: 6px 12px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 500;
-      color: #999999;
+      color: var(--figma-color-text-secondary, #00000080);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s;
+    }
+
+    .tab:hover {
+      color: var(--figma-color-text, #333333);
     }
 
     .tab.active {
-      border-bottom: 2px solid #18a0fb;
-      color: #18a0fb;
+      border-bottom-color: var(--figma-color-bg-brand, #0d99ff);
+      color: var(--figma-color-bg-brand, #0d99ff);
     }
 
     .tab-content {
@@ -225,7 +254,7 @@
     }
 
     .link {
-      color: #18a0fb;
+      color: var(--figma-color-text-brand, #007be5);
       text-decoration: none;
       cursor: pointer;
     }
@@ -234,25 +263,13 @@
       text-decoration: underline;
     }
 
-    .header-logo {
-      padding: 16px;
-      border-radius: 16px;
-      background-color: #333;
-    }
-
-    .header-logo-image {
-      width: 24px;
-      height: 24px;
-      object-fit: contain;
-    }
-
     /* Progress styles */
     .operation-complete {
-      color: #4ade80;
+      color: #009951;
     }
 
     .operation-error {
-      color: #ff9999;
+      color: #dc3412;
     }
   </style>
 </head>
@@ -261,7 +278,7 @@
   <div class="container">
     <div class="header">
       <div class="header-text">
-        <h1>Vibe Designing <span id="version-badge" style="font-weight:400;font-size:12px;color:#999"></span></h1>
+        <h1>Vibe Designing <span id="version-badge" style="font-weight:400;font-size:11px;color:var(--figma-color-text-tertiary, #0000004d)"></span></h1>
         <p>Vibe Design meets Figma — AI-powered MCP bridge</p>
       </div>
     </div>
@@ -297,13 +314,13 @@
       </div>
 
       <div
-        style="margin-top: 12px; padding: 10px; background-color: #2a2a2a; border-left: 3px solid #f0ad4e; border-radius: 4px; font-size: 12px; color: #ccc; line-height: 1.5;">
-        <strong style="color: #f0ad4e;">Note:</strong> Vibe Designing grants the connected AI agent full read &amp;
+        style="margin-top: 12px; padding: 10px; background-color: #fff8e6; border-left: 3px solid #b86200; border-radius: 4px; font-size: 11px; color: #333; line-height: 1.5;">
+        <strong style="color: #b86200;">Note:</strong> Vibe Designing grants the connected AI agent full read &amp;
         write access to this Figma file. It can create, modify, and delete layers in your design. Use with care and on
         files you're comfortable editing.
       </div>
 
-      <div style="margin-top: 12px; font-size: 12px; color: #999;">
+      <div style="margin-top: 12px; font-size: 11px; color: var(--figma-color-text-secondary, #00000080);">
         Having issues? <a id="btn-reset" class="link">Reset tunnel</a>
       </div>
 
@@ -313,15 +330,15 @@
         <div id="progress-message">No operation in progress</div>
         <div style="
               width: 100%;
-              background-color: #444;
-              border-radius: 4px;
+              background-color: var(--figma-color-bg-secondary, #f5f5f5);
+              border-radius: 2px;
               margin-top: 8px;
             ">
           <div id="progress-bar" style="
                 width: 0%;
-                height: 8px;
-                background-color: #18a0fb;
-                border-radius: 4px;
+                height: 4px;
+                background-color: var(--figma-color-bg-brand, #0d99ff);
+                border-radius: 2px;
                 transition: width 0.3s;
               "></div>
         </div>
@@ -329,7 +346,8 @@
               display: flex;
               justify-content: space-between;
               margin-top: 4px;
-              font-size: 12px;
+              font-size: 11px;
+              color: var(--figma-color-text-secondary, #00000080);
             ">
           <div id="progress-status">Not started</div>
           <div id="progress-percentage">0%</div>
@@ -349,8 +367,7 @@
   </div>
 
   <script>
-    // Keep in sync with package.json version
-    const VIBE_DESIGNING_VERSION = "0.1.1";
+    const VIBE_DESIGNING_VERSION = "0.2.0";
 
     // WebSocket connection state
     const state = {
@@ -392,10 +409,10 @@
         const ver = state.mcpPeer.version ? ` (v${state.mcpPeer.version})` : "";
         msg += `<br>Session: <strong>${name}</strong>${ver}`;
       } else {
-        msg += `<br><span style="color:#999">Waiting for MCP connection…</span>`;
+        msg += `<br><span style="color:var(--figma-color-text-tertiary, #0000004d)">Waiting for MCP connection…</span>`;
       }
       if (state.versionWarning) {
-        msg += `<br><span style="color:#f0ad4e">⚠ ${state.versionWarning}</span>`;
+        msg += `<br><span style="color:#b86200">⚠ ${state.versionWarning}</span>`;
       }
       return msg;
     }
