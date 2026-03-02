@@ -1,10 +1,10 @@
 # Vibe Designing Project Roadmap
 
-## Current Status: v0.2.0 Complete
+## Current Status: v0.3.5 Complete
 
-**Current Release:** v0.2.0 (March 2026)
-**Status:** Architecture Enhanced, Production Ready
-**Focus:** Community tools & collaborative features (Phase 2)
+**Current Release:** v0.3.5 (March 2026)
+**Status:** Design Intelligence (Beta), Production Ready
+**Focus:** Quality improvements & collaborative features (Phase 2+)
 
 ---
 
@@ -81,6 +81,12 @@
 ---
 
 ## Phase 2: Community & Polish (In Progress, 2026 Q1-Q2)
+
+### Design Intelligence (v0.3.0+)
+- [x] recommend_design tool (MCP server-side, spawns ui-ux-pro-max Python CLI)
+- [x] design_workflow prompt for guided end-to-end design creation
+- [ ] design_system analysis (detect palette, typography patterns)
+- [ ] Auto-suggest design patterns for context
 
 ### Accessibility & Documentation
 - [ ] Interactive tool documentation with examples
@@ -301,6 +307,7 @@ Not our limitations but external:
 | **Modification** | 17/17 | 17/17 | 19/19 | 25/25 | 30/30 |
 | **Querying** | 14/14 | 20/20 | 25/25 | 30/30 | 35/35 |
 | **Systems** | 16/16 | 20/20 | 25/25 | 30/30 | 35/35 |
+| **Intelligence** | 0/1 | 1/3 | 2/5 | 3/5 | 5/5 |
 | **Collab** | 0/5 | 0/5 | 5/5 | 5/5 | 5/5 |
 
 ---
@@ -365,25 +372,27 @@ Phase 5 (Cloud)
 - ✓ CLI setup command
 - ✓ Simplified deployment
 
-### v0.3.0 (2026 Q2: Quality & Community)
-- Tests >80% coverage
-- Enhanced UI
-- Community integrations
-- Advanced search
+### v0.3.0 (2026 Q1-Q2: Design Intelligence & Quality)
+- ✓ Design recommendations via ui-ux-pro-max integration
+- ✓ design_workflow prompt for guided design creation
+- [ ] Tests >80% coverage
+- [ ] Enhanced UI
+- [ ] Community integrations
+- [ ] Advanced search
 
-### v0.3.0 (2026 Q3: Collaboration)
-- Multi-user support
-- Real-time sync
-- Change notifications
-- Webhooks
+### v0.4.0 (2026 Q3: Collaboration)
+- [ ] Multi-user support
+- [ ] Real-time sync
+- [ ] Change notifications
+- [ ] Webhooks
 
-### v0.4.0 (2026 Q4: Systems)
-- Advanced token management
-- 10,000+ node support
-- Design → Code
-- Spec generation
+### v0.5.0 (2026 Q4: Advanced Systems)
+- [ ] Advanced token management
+- [ ] 10,000+ node support
+- [ ] Design → Code generation
+- [ ] Spec generation
 
-### v1.0.0 (2027: Stable)
+### v1.0.0 (2027: Stable Release)
 - Cloud deployment
 - Enterprise features
 - SaaS offering

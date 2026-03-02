@@ -39,10 +39,11 @@ vibe-designing/
 │   │   ├── selection.ts       # Selection operations (166 LOC)
 │   │   ├── document.ts        # Document structure (151 LOC)
 │   │   ├── lint.ts            # Design linting (759 LOC)
+│   │   ├── recommend-design.ts # AI design recommendations via ui-ux-pro-max (MCP-only, server-side)
 │   │   ├── connection.ts      # Connection helpers (34 LOC)
 │   │   ├── fonts.ts           # Font management (43 LOC)
 │   │   ├── helpers.ts         # Utility helpers (153 LOC)
-│   │   ├── prompts.ts         # MCP prompts (237 LOC)
+│   │   ├── prompts.ts         # MCP prompts (297 LOC)
 │   │   └── types.ts           # Shared type definitions
 │   ├── utils/                 # Utility modules (~1,100 LOC)
 │   │   ├── figma-helpers.ts   # Plugin runtime helpers (267 LOC)
@@ -145,7 +146,16 @@ vibe-designing/
 | **Styling** | styles, variables | 16 tools | Design tokens, paint/text/effect styles, variable collections & bindings |
 | **Querying** | node-info, selection, document | 14 tools | Get node info, CSS export, search, selection, viewport, page management |
 | **Quality** | lint | 1 tool (10 rules) | Design linting: 8 rules + 2 WCAG 2.2 rules + 2 auto-fix rules |
-| **Support** | helpers, prompts, fonts, connection | 4 tools + 4 prompts | Ping, channel info, font listing, MCP system prompts |
+| **AI Intelligence** | recommend-design | 1 tool | Design system recommendations via ui-ux-pro-max (server-side Python) |
+| **Support** | helpers, prompts, fonts, connection | 4 tools + 5 prompts | Ping, channel info, font listing, MCP system prompts |
+
+**tools/recommend-design.ts** — AI Design Recommendations (Server-Only)
+- Spawns ui-ux-pro-max Python CLI via `child_process.execFile` (no shell injection)
+- Auto-detects Python3 binary and search.py script path
+- Returns complete design system: colors, typography, style, layout patterns
+- Graceful fallback with install instructions when dependencies missing
+- 15s timeout, cross-platform path detection
+- Uses `handler` field — runs server-side, no Figma plugin needed
 
 ### Utility Modules
 
@@ -274,6 +284,24 @@ export const mcpTools: ToolDefinition[] = [
 ```
 
 Auto-registration via codegen — no manual server.tool() calls needed.
+
+### Server-Only Tool Pattern (v0.3.x+)
+
+Tools with a `handler` field in `ToolDefinition` run server-side without Figma plugin communication.
+Codegen uses the handler directly instead of wrapping with `sendCommand`. Used for: external CLI integrations, AI recommendations.
+
+```typescript
+export const mcpTools: ToolDefinition[] = [{
+  name: "recommend_design",
+  description: "...",
+  schema: { query: z.string() },
+  handler: async (params) => {
+    // Server-side logic (e.g., spawn Python process)
+    return { content: [{ type: "text", text: output }] };
+  },
+}];
+export const figmaHandlers: Record<string, (p: any) => Promise<any>> = {};
+```
 
 ### Error Handling
 

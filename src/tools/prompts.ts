@@ -234,4 +234,47 @@ Transfer content overrides from a source instance to target instances.
       description: "Strategy for transferring overrides between component instances in Figma",
     })
   );
+
+  server.prompt(
+    "design_workflow",
+    "Automated design creation: get AI recommendations then build complete Figma design",
+    () => ({
+      messages: [{
+        role: "assistant" as const,
+        content: {
+          type: "text" as const,
+          text: `# Automated Design Workflow
+
+## Prerequisites
+- Figma plugin connected (run ping() to verify)
+- Optional: ui-ux-pro-max for AI design recommendations
+
+## Step 1: Get Design Recommendations
+recommend_design(query: "luxury spa wellness elegant landing page")
+Returns: color palette, typography, UI style, layout pattern. Without ui-ux-pro-max, ask user manually.
+
+## Step 2: Create Design Tokens
+Color styles: create_paint_style(name: "primary", color: "#8B5CF6") — repeat for secondary, cta, background, text.
+Text styles: create_text_style(name: "heading", fontFamily: "Playfair Display", fontSize: 48, fontWeight: 700) — repeat for subheading, body.
+
+## Step 3: Variables (Optional)
+create_variable_collection(name: "Design Tokens"), then create_variable for spacing/sm (8), spacing/md (16), spacing/lg (32).
+
+## Step 4: Create Page Sections
+create_frame(name: "Hero Section", width: 1440, height: 800, layoutMode: "VERTICAL", primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER", paddingTop: 80, paddingBottom: 80)
+Sections: Hero, Features, Testimonials, CTA, Footer. Use fillStyleName for backgrounds.
+
+## Step 5: Add Content & Quality Check
+create_text(text: "...", parentId: frameId, textStyleName: "heading", fillStyleName: "text")
+After each section: lint_node(nodeId: pageNodeId) — fix hardcoded colors, missing styles, no auto-layout.
+
+## Tips
+- Always use design tokens — never hardcode colors
+- Auto-layout on every container, name all layers descriptively
+- Lint early and often`,
+        },
+      }],
+      description: "Step-by-step guide for creating complete Figma designs with AI recommendations",
+    })
+  );
 }

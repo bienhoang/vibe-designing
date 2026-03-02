@@ -21,6 +21,9 @@ export interface ToolDefinition {
   timeoutMs?: number;
   /** When "image", auto-wraps response as MCP image content instead of JSON text */
   responseType?: "image";
+  /** Server-side handler. When set, codegen uses this directly instead of sendCommand wrapper.
+   *  Use for tools that run server-side (e.g., spawn Python) and don't need Figma plugin. */
+  handler?: (params: any) => Promise<{ content: Array<{ type: "text"; text: string }> }>;
 }
 
 /** Standard batch result from Figma handlers */

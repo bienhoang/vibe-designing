@@ -258,6 +258,37 @@ If any tool times out after a successful `join_channel`, the Figma plugin is not
 - The **channel name** matches what MCP joined
 - The plugin status shows **Connected**
 
+## Design Intelligence (Optional)
+
+Supercharge your design workflow with AI-powered recommendations. Install [ui-ux-pro-max](https://github.com/bienhoang/ui-ux-pro-max) for automatic color palettes, typography pairings, UI style selection, and layout patterns.
+
+### Setup
+
+1. **Python 3 required** — most dev machines already have it (`python3 --version`)
+2. **Install ui-ux-pro-max:**
+   ```bash
+   git clone https://github.com/bienhoang/ui-ux-pro-max.git ~/.claude/skills/ui-ux-pro-max
+   ```
+3. **Verify:** The `recommend_design` tool auto-detects the installation
+
+**Custom path:** If installed elsewhere, set `UI_UX_PROMAX_PATH`:
+```bash
+export UI_UX_PROMAX_PATH=/path/to/ui-ux-pro-max
+```
+
+### Usage
+
+The `recommend_design` tool returns design system recommendations:
+```
+recommend_design(query: "luxury spa landing page")
+```
+
+Use the `design_workflow` prompt for guided end-to-end design creation.
+
+Without ui-ux-pro-max, the tool returns installation instructions and you can provide design specs manually.
+
+---
+
 ## Documentation
 
 | Document | Purpose |

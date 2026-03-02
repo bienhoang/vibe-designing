@@ -17,12 +17,14 @@ src/
 │   ├── ui.html              # Plugin UI (iframe)
 │   ├── manifest.json        # Plugin declaration
 │   └── setcharacters.js     # Text rendering utility
-├── tools/                    # Design operation tools
+├── tools/                    # Design operation tools & MCP services
 │   ├── _mcp-registry.generated.ts      # Auto-generated MCP registry (v0.2.0+)
 │   ├── _figma-registry.generated.ts    # Auto-generated Figma registry (v0.2.0+)
 │   ├── schemas.ts           # Zod validation schemas
-│   ├── types.ts             # Shared TypeScript types
-│   └── [category]/          # Organized by feature
+│   ├── types.ts             # Shared TypeScript types (includes handler field, v0.3.0+)
+│   ├── recommend-design.ts  # Server-only tool: Python subprocess dispatcher (v0.3.0+)
+│   ├── prompts.ts           # MCP prompts (including design_workflow v0.3.0+)
+│   └── [figma-tools]/       # Figma-connected tools (dispatch to plugin)
 │       ├── components.ts
 │       ├── create-frame.ts
 │       ├── create-shape.ts
@@ -39,9 +41,7 @@ src/
 │       ├── document.ts
 │       ├── lint.ts
 │       ├── connection.ts
-│       ├── fonts.ts
-│       ├── helpers.ts
-│       └── prompts.ts
+│       └── fonts.ts
 └── utils/                    # Utility functions
     ├── figma-helpers.ts     # Plugin runtime helpers
     ├── serialize-node.ts    # Node JSON serialization
@@ -165,6 +165,10 @@ export const figmaHandlers: Record<string, CommandHandler> = {
 
 ### 4. Export Tool Definition (v0.2.0+)
 
+Two patterns: **Figma-connected tools** (default) and **server-only tools** (with handler).
+
+#### Standard Tool (Figma-connected)
+
 ```typescript
 import { ToolDefinition } from "@modelcontextprotocol/sdk/types";
 
@@ -172,23 +176,10 @@ export const mcpTools: ToolDefinition[] = [
   {
     name: "your_tool",
     description: "Does something useful",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: {
-          type: "string",
-          description: "Node ID or path",
-        },
-        value: {
-          type: "number",
-          description: "Numeric value",
-        },
-        enabled: {
-          type: "boolean",
-          description: "Enable feature",
-        },
-      },
-      required: ["nodeId", "value"],
+    schema: {
+      nodeId: z.string().describe("Node ID or path"),
+      value: z.number().describe("Numeric value"),
+      enabled: z.boolean().describe("Enable feature"),
     },
   },
 ];
@@ -196,18 +187,71 @@ export const mcpTools: ToolDefinition[] = [
 export { figmaHandlers };
 ```
 
+#### Server-Only Tool (with handler)
+
+For tools that execute server-side (e.g., spawn external CLIs, compute recommendations) without Figma plugin interaction:
+
+```typescript
+import { ToolDefinition } from "@modelcontextprotocol/sdk/types";
+import { z } from "zod";
+import { execFile } from "child_process";
+
+async function recommendDesign(params: { query: string }) {
+  const { query } = params;
+
+  // Execute Python CLI or other process
+  const output = await execPython("search.py", [query]);
+
+  return { content: [{ type: "text", text: output }] };
+}
+
+export const mcpTools: ToolDefinition[] = [
+  {
+    name: "recommend_design",
+    description: "Get AI-powered design recommendations (requires Python 3)",
+    schema: {
+      query: z.string().max(500).describe("Design query"),
+    },
+    handler: recommendDesign,  // Server-side execution
+  },
+];
+
+export const figmaHandlers = {};  // Empty — no plugin dispatch needed
+```
+
 **Declarative Guidelines (v0.2.0+):**
 - Export `mcpTools` array with `ToolDefinition` objects
 - Auto-wrapped by codegen into server.tool() calls
-- Export `figmaHandlers` (no changes to plugin-side handlers)
+- Use `handler` field for **server-only tools** (spawns processes, reads files, etc.)
+- Without `handler`: codegen wraps in sendCommand() → Figma plugin dispatch
+- Export `figmaHandlers` (required for Figma-connected tools, can be empty for server-only)
 - No manual `registerMcpTools()` function needed
 - Run `npm run build` (or `npm run generate` standalone) to generate registries
 
+**Handler Return Format:**
+```typescript
+{
+  content: [{
+    type: "text",  // or "image" for imageData
+    text: "output"
+  }]
+}
+```
+
 **Adding a New Tool (Simplified Workflow):**
+
+*Figma-connected tool:*
 1. Create `src/tools/my-feature.ts`
-2. Export `mcpTools: ToolDefinition[]` and `figmaHandlers`
+2. Export `mcpTools: ToolDefinition[]` (without handler) and `figmaHandlers`
 3. Run `npm run build` (codegen runs automatically via prebuild)
 4. Tool is auto-registered in MCP server
+
+*Server-only tool:*
+1. Create `src/tools/my-service.ts`
+2. Implement handler function (spawns process, reads files, etc.)
+3. Export `mcpTools` with `handler` field, empty `figmaHandlers`
+4. Run `npm run build` — codegen detects handler and skips sendCommand wrapper
+5. Tool is auto-registered in MCP server
 
 ## Naming Conventions
 

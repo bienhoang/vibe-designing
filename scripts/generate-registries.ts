@@ -64,7 +64,15 @@ export function registerAllTools(server: McpServer, sendCommand: SendCommandFn) 
     const cmd = tool.commandName || tool.name;
     const timeout = tool.timeoutMs;
 
-    if (tool.responseType === "image") {
+    if (tool.handler) {
+      server.tool(tool.name, tool.description, tool.schema, async (params: any) => {
+        try {
+          return await tool.handler!(params);
+        } catch (e) {
+          return mcpError(\`Error in \${tool.name}\`, e);
+        }
+      });
+    } else if (tool.responseType === "image") {
       server.tool(tool.name, tool.description, tool.schema, async (params: any) => {
         try {
           const result = await sendCommand(cmd, params, timeout) as any;
