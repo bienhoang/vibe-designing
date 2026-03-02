@@ -8,3 +8,4 @@ certs/
 /plugin/
 plans/
 .DS_Store
+.npmrc
