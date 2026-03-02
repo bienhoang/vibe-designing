@@ -306,7 +306,7 @@ Without Python 3, you can still provide design specs manually to create Figma de
 
 ## Status
 
-**Version:** 0.5.0 (Stable, Production Ready)
+**Version:** 0.6.0 (Stable, Production Ready)
 
 **Features:** 50+ design tools, WCAG linting, design tokens, real-time sync
 
