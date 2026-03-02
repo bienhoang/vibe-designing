@@ -249,19 +249,3 @@ async function setCharactersSmart(node: TextNode, characters: string, fallbackFo
   });
   return true;
 }
-
-/** Map numeric font weight to Inter font style name */
-export function getFontStyle(weight: number): string {
-  switch (weight) {
-    case 100: return "Thin";
-    case 200: return "Extra Light";
-    case 300: return "Light";
-    case 400: return "Regular";
-    case 500: return "Medium";
-    case 600: return "Semi Bold";
-    case 700: return "Bold";
-    case 800: return "Extra Bold";
-    case 900: return "Black";
-    default: return "Regular";
-  }
-}

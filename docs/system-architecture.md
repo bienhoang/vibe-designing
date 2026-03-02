@@ -80,6 +80,7 @@ Vibe Designing is a distributed system connecting AI agents to Figma through thr
 **Implementation:** Embedded in MCP server (`src/server/tunnel.ts`) — starts automatically (v0.2.0+)
 
 **Port Auto-Scanning:** Relay tries ports 3055-3058 in order, uses first available
+- If all ports busy: falls back to OS-assigned ephemeral port (port 0)
 - Configurable via `VIBE_DESIGNING_PORT` env var
 - Auto-starts with MCP server (no separate process)
 - Standalone Docker mode: `src/server/tunnel-standalone.ts` for custom deployments

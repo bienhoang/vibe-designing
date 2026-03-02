@@ -151,3 +151,25 @@ export async function suggestTextStyle(
   }
   return `Manual font (${fontSize}px / ${fontWeight}w) has no text style. Create one with create_text_style, then use textStyleName for design token consistency.`;
 }
+
+/**
+ * Resolve a local paint style by name (exact match first, then case-insensitive fuzzy).
+ * Returns { id, available } so callers can build "style not found" hints.
+ */
+export async function resolvePaintStyle(name: string): Promise<{ id: string | null, available: string[] }> {
+  const styles = await figma.getLocalPaintStylesAsync();
+  const available = styles.map(s => s.name);
+  const exact = styles.find(s => s.name === name);
+  if (exact) return { id: exact.id, available };
+  const fuzzy = styles.find(s => s.name.toLowerCase().includes(name.toLowerCase()));
+  return { id: fuzzy?.id ?? null, available };
+}
+
+/** Map numeric font weight (100-900) to Inter font style name */
+export function getFontStyle(weight: number): string {
+  const map: Record<number, string> = {
+    100: "Thin", 200: "Extra Light", 300: "Light", 400: "Regular",
+    500: "Medium", 600: "Semi Bold", 700: "Bold", 800: "Extra Bold", 900: "Black",
+  };
+  return map[weight] || "Regular";
+}

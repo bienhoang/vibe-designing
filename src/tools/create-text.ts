@@ -2,7 +2,7 @@ import { z } from "zod";
 import { flexJson } from "../utils/coercion";
 import * as S from "./schemas";
 import type { ToolDefinition } from "./types";
-import { batchHandler, appendToParent, styleNotFoundHint, suggestStyleForColor, suggestTextStyle, findVariableById } from "./helpers";
+import { batchHandler, appendToParent, styleNotFoundHint, suggestStyleForColor, suggestTextStyle, findVariableById, getFontStyle } from "./helpers";
 
 // ─── Schema ──────────────────────────────────────────────────────
 
@@ -33,14 +33,6 @@ export const mcpTools: ToolDefinition[] = [
 ];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
-
-function getFontStyle(weight: number): string {
-  const map: Record<number, string> = {
-    100: "Thin", 200: "Extra Light", 300: "Light", 400: "Regular",
-    500: "Medium", 600: "Semi Bold", 700: "Bold", 800: "Extra Bold", 900: "Black",
-  };
-  return map[weight] || "Regular";
-}
 
 interface CreateTextContext {
   textStyles: any[] | null;

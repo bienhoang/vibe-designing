@@ -24,17 +24,10 @@ export function createTunnelServer() {
   const channels = new Map<string, Channel>();
   const clientInfo = new WeakMap<WebSocket, { channel: string; role: Role }>();
 
-  // ── HTTP server (CORS + debug endpoint) ─────────────────────
+  // ── HTTP server (debug endpoint) ────────────────────────────
+  // No CORS headers — endpoints are localhost-only debug/admin tools.
+  // Figma plugin connects via WebSocket, not HTTP REST.
   const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-    if (req.method === "OPTIONS") {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
 
     if (req.method === "GET" && req.url === "/channels") {
       const snapshot: Record<string, any> = {};

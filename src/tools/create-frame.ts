@@ -2,7 +2,7 @@ import { z } from "zod";
 import { flexJson } from "../utils/coercion";
 import * as S from "./schemas";
 import type { ToolDefinition } from "./types";
-import { batchHandler, appendToParent, solidPaint, styleNotFoundHint, suggestStyleForColor, findVariableById } from "./helpers";
+import { batchHandler, appendToParent, solidPaint, styleNotFoundHint, suggestStyleForColor, findVariableById, resolvePaintStyle } from "./helpers";
 import { looksInteractive } from "../utils/wcag";
 
 // ─── Schema ──────────────────────────────────────────────────────
@@ -60,15 +60,6 @@ export const mcpTools: ToolDefinition[] = [
 ];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
-
-async function resolvePaintStyle(name: string): Promise<{ id: string | null, available: string[] }> {
-  const styles = await figma.getLocalPaintStylesAsync();
-  const available = styles.map(s => s.name);
-  const exact = styles.find(s => s.name === name);
-  if (exact) return { id: exact.id, available };
-  const fuzzy = styles.find(s => s.name.toLowerCase().includes(name.toLowerCase()));
-  return { id: fuzzy?.id ?? null, available };
-}
 
 async function createSingleFrame(p: any) {
   const {

@@ -67,7 +67,8 @@ export function registerAllTools(server: McpServer, sendCommand: SendCommandFn) 
     if (tool.responseType === "image") {
       server.tool(tool.name, tool.description, tool.schema, async (params: any) => {
         try {
-          return (await sendCommand(cmd, params, timeout)) as any;
+          const result = await sendCommand(cmd, params, timeout) as any;
+          return { content: [{ type: "image" as const, data: result.imageData, mimeType: result.mimeType }] };
         } catch (e) {
           return mcpError(\`Error in \${tool.name}\`, e);
         }
