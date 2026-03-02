@@ -11,3 +11,4 @@ plans/
 .npmrc
 src/.DS_Store
 __pycache__
+src/.DS_Store

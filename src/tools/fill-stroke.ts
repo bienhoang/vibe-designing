@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { flexJson, flexBool } from "../utils/coercion";
 import * as S from "./schemas";
-import type { ToolDefinition } from "./types";
+import type { ToolDefinition, SendCommandFn } from "./types";
+import { mcpJson, mcpError } from "./types";
 import { batchHandler, styleNotFoundHint, suggestStyleForColor } from "./helpers";
+import { customBase64Decode } from "../utils/base64";
 
 // ─── Schemas ─────────────────────────────────────────────────────
 
@@ -31,6 +33,54 @@ const opacityItem = z.object({
   opacity: z.coerce.number().min(0).max(1).describe("Opacity (0-1)"),
 });
 
+// ─── Server-side Handlers ───────────────────────────────────────
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
+
+async function setImageFillHandler(params: any, sendCommand?: SendCommandFn) {
+  if (!sendCommand) return mcpError("set_image_fill", "sendCommand not available");
+
+  try {
+    const { nodeId, imageUrl, scaleMode } = params;
+
+    // SSRF protection: only allow http/https
+    const parsed = new URL(imageUrl);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return mcpError("set_image_fill", "Only http/https URLs allowed");
+    }
+
+    const res = await fetch(imageUrl, { signal: AbortSignal.timeout(55_000) });
+    if (!res.ok) return mcpError("set_image_fill", `Fetch failed: ${res.status} ${res.statusText}`);
+
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType && !/^image\/(png|jpeg|gif|webp|svg\+xml)/.test(contentType)) {
+      return mcpError("set_image_fill", `Unexpected content-type: ${contentType}. Expected image (PNG, JPG, GIF, WEBP).`);
+    }
+
+    const contentLength = Number(res.headers.get("content-length") || 0);
+    if (contentLength > MAX_IMAGE_BYTES) {
+      return mcpError("set_image_fill", `Image too large: ${Math.round(contentLength / 1024)}KB (max 5MB)`);
+    }
+
+    const arrayBuffer = await res.arrayBuffer();
+    if (arrayBuffer.byteLength > MAX_IMAGE_BYTES) {
+      return mcpError("set_image_fill", `Image too large: ${Math.round(arrayBuffer.byteLength / 1024)}KB (max 5MB)`);
+    }
+
+    const imageData = Buffer.from(arrayBuffer).toString("base64");
+
+    const result = await sendCommand("set_image_fill", {
+      nodeId,
+      imageData,
+      scaleMode: scaleMode || "FILL",
+    });
+
+    return mcpJson(result);
+  } catch (e) {
+    return mcpError("set_image_fill", e);
+  }
+}
+
 // ─── MCP Tool Definitions ───────────────────────────────────────
 
 export const mcpTools: ToolDefinition[] = [
@@ -38,6 +88,17 @@ export const mcpTools: ToolDefinition[] = [
   { name: "set_stroke_color", description: "Set stroke color on nodes. Use styleName to apply a paint style by name. Batch: pass multiple items.", schema: { items: flexJson(z.array(strokeItem)).describe("Array of {nodeId, color?, strokeWeight?, styleName?}"), depth: S.depth } },
   { name: "set_corner_radius", description: "Set corner radius on nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(cornerItem)).describe("Array of {nodeId, radius, corners?}"), depth: S.depth } },
   { name: "set_opacity", description: "Set opacity on nodes. Batch: pass multiple items.", schema: { items: flexJson(z.array(opacityItem)).describe("Array of {nodeId, opacity}"), depth: S.depth } },
+  {
+    name: "set_image_fill",
+    description: "Set an image fill on a node from a URL. Fetches the image server-side and sends it to the Figma plugin. Supports PNG, JPG, GIF, WEBP. Max 5MB.",
+    schema: {
+      nodeId: S.nodeId,
+      imageUrl: z.string().url().describe("Public image URL (PNG, JPG, GIF, WEBP). Max 5MB."),
+      scaleMode: z.enum(["FILL", "FIT", "CROP", "TILE"]).optional().describe("How image scales within node bounds. Default: FILL"),
+    },
+    handler: setImageFillHandler,
+    timeoutMs: 60_000,
+  },
 ];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
@@ -128,9 +189,30 @@ async function setOpacitySingle(p: any) {
   return {};
 }
 
+async function setImageFillFigma(params: any) {
+  const { nodeId, imageData, scaleMode } = params;
+
+  const node = await figma.getNodeByIdAsync(nodeId);
+  if (!node) throw new Error(`Node not found: ${nodeId}`);
+  if (!("fills" in node)) throw new Error(`Node does not support fills: ${nodeId}`);
+
+  // Decode base64 → Uint8Array (no atob in Figma sandbox)
+  const bytes = customBase64Decode(imageData);
+
+  const image = figma.createImage(bytes);
+  (node as any).fills = [{
+    type: "IMAGE",
+    scaleMode: scaleMode || "FILL",
+    imageHash: image.hash,
+  }];
+
+  return { nodeId, imageHash: image.hash, scaleMode: scaleMode || "FILL" };
+}
+
 export const figmaHandlers: Record<string, (params: any) => Promise<any>> = {
   set_fill_color: (p) => batchHandler(p, setFillSingle),
   set_stroke_color: (p) => batchHandler(p, setStrokeSingle),
   set_corner_radius: (p) => batchHandler(p, setCornerSingle),
   set_opacity: (p) => batchHandler(p, setOpacitySingle),
+  set_image_fill: setImageFillFigma,
 };

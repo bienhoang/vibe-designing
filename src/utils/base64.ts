@@ -30,3 +30,28 @@ export function customBase64Encode(bytes: Uint8Array): string {
 
   return base64;
 }
+
+/** Base64 decode a string to Uint8Array (works in Figma plugin sandbox where atob may not exist). */
+export function customBase64Decode(base64: string): Uint8Array {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const lookup = new Uint8Array(128);
+  for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
+
+  // Strip padding and calculate output length
+  let stripped = base64.replace(/=+$/, "");
+  const byteLength = (stripped.length * 3) >> 2;
+  const bytes = new Uint8Array(byteLength);
+
+  let p = 0;
+  for (let i = 0; i < stripped.length; i += 4) {
+    const a = lookup[stripped.charCodeAt(i)];
+    const b = i + 1 < stripped.length ? lookup[stripped.charCodeAt(i + 1)] : 0;
+    const c = i + 2 < stripped.length ? lookup[stripped.charCodeAt(i + 2)] : 0;
+    const d = i + 3 < stripped.length ? lookup[stripped.charCodeAt(i + 3)] : 0;
+    bytes[p++] = (a << 2) | (b >> 4);
+    if (p < byteLength) bytes[p++] = ((b & 15) << 4) | (c >> 2);
+    if (p < byteLength) bytes[p++] = ((c & 3) << 6) | d;
+  }
+
+  return bytes;
+}
