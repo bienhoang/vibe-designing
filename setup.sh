@@ -87,9 +87,11 @@ if [ -d "$HOME/.claude" ]; then
 
 When the user asks to design anything in Figma, you MUST use the Vibe Designing MCP tools.
 
+IMPORTANT: Do NOT use listMcpResources to find tools. The MCP server name is "Vibe Designing" (with space) but tools use underscores in their prefix. Always use ToolSearch as described below.
+
 ## Tool Discovery (REQUIRED)
 
-All Vibe Designing tools are deferred. You must load them via ToolSearch before use:
+All Vibe Designing tools are deferred. You MUST load them via ToolSearch before use:
 
 1. `ToolSearch` query: `"select:mcp__Vibe_Designing__ping"` — verify connection
 2. `ToolSearch` query: `"+Vibe_Designing create"` — load creation tools (frames, text, shapes)
