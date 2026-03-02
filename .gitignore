@@ -10,3 +10,4 @@ plans/
 .DS_Store
 .npmrc
 src/.DS_Store
+__pycache__

@@ -22,7 +22,6 @@ src/
 │   ├── _figma-registry.generated.ts    # Auto-generated Figma registry (v0.2.0+)
 │   ├── schemas.ts           # Zod validation schemas
 │   ├── types.ts             # Shared TypeScript types (includes handler field, v0.3.0+)
-│   ├── recommend-design.ts  # Server-only tool: Python subprocess dispatcher (v0.3.0+)
 │   ├── icons.ts             # Icon system: search, list, create (hybrid pattern, v0.3.5+)
 │   ├── prompts.ts           # MCP prompts (including design_workflow v0.3.0+)
 │   ├── icon-providers/      # Icon provider abstraction (v0.3.5+)
@@ -194,30 +193,30 @@ export { figmaHandlers };
 
 #### Server-Only Tool (with handler)
 
-For tools that execute server-side (e.g., spawn external CLIs, compute recommendations) without Figma plugin interaction:
+For tools that execute server-side (e.g., spawn external CLIs, compute data) without Figma plugin interaction:
 
 ```typescript
 import { ToolDefinition } from "@modelcontextprotocol/sdk/types";
 import { z } from "zod";
 import { execFile } from "child_process";
 
-async function recommendDesign(params: { query: string }) {
+async function myServerTool(params: { query: string }) {
   const { query } = params;
 
-  // Execute Python CLI or other process
-  const output = await execPython("search.py", [query]);
+  // Execute CLI or other server-side process
+  const output = await execProcess("tool", [query]);
 
   return { content: [{ type: "text", text: output }] };
 }
 
 export const mcpTools: ToolDefinition[] = [
   {
-    name: "recommend_design",
-    description: "Get AI-powered design recommendations (requires Python 3)",
+    name: "my_server_tool",
+    description: "Server-side tool example",
     schema: {
-      query: z.string().max(500).describe("Design query"),
+      query: z.string().max(500).describe("Query string"),
     },
-    handler: recommendDesign,  // Server-side execution
+    handler: myServerTool,  // Server-side execution
   },
 ];
 

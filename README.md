@@ -54,7 +54,7 @@ AI agents send design commands via MCP tools. The MCP server includes a built-in
 | **Icons** | 3 | Search 4000+ Lucide icons, list providers, create icon components |
 | **Query** | 14 | Get node info, search, selection, serialize design |
 | **Quality** | 1 | Lint designs, WCAG 2.2 validation, auto-fix |
-| **AI Intelligence** | 1 | Design system recommendations via ui-ux-pro-max |
+| **AI Intelligence** | 1 | Bundled design system recommendations (Python 3 required) |
 | **Total** | **53+** | Cover creation to production |
 
 See full [tool reference](./docs/codebase-summary.md#tool-categories-53-tools).
@@ -260,34 +260,19 @@ If any tool times out after a successful `join_channel`, the Figma plugin is not
 - The **channel name** matches what MCP joined
 - The plugin status shows **Connected**
 
-## Design Intelligence (Optional)
+## Design Intelligence (Bundled)
 
-Supercharge your design workflow with AI-powered recommendations. Install [ui-ux-pro-max](https://github.com/bienhoang/ui-ux-pro-max) for automatic color palettes, typography pairings, UI style selection, and layout patterns.
+Design system recommendations are bundled with Vibe Designing — no separate installation needed.
 
-### Setup
+### Requirements
 
-1. **Python 3 required** — most dev machines already have it (`python3 --version`)
-2. **Install ui-ux-pro-max:**
-   ```bash
-   git clone https://github.com/bienhoang/ui-ux-pro-max.git ~/.claude/skills/ui-ux-pro-max
-   ```
-3. **Verify:** The `recommend_design` tool auto-detects the installation
-
-**Custom path:** If installed elsewhere, set `UI_UX_PROMAX_PATH`:
-```bash
-export UI_UX_PROMAX_PATH=/path/to/ui-ux-pro-max
-```
+- **Python 3** — most dev machines already have it (`python3 --version`)
 
 ### Usage
 
-The `recommend_design` tool returns design system recommendations:
-```
-recommend_design(query: "luxury spa landing page")
-```
+Use the `design_workflow` prompt for guided end-to-end design creation with AI-powered recommendations. The prompt instructs Claude Code to run bundled Python scripts that search 50+ styles, 97 color palettes, 57 font pairings, and 99 UX guidelines.
 
-Use the `design_workflow` prompt for guided end-to-end design creation.
-
-Without ui-ux-pro-max, the tool returns installation instructions and you can provide design specs manually.
+Without Python 3, you can still provide design specs manually to create Figma designs.
 
 ---
 

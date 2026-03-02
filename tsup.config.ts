@@ -1,5 +1,6 @@
 import { defineConfig } from 'tsup';
-import { copyFileSync, readFileSync } from 'fs';
+import { copyFileSync, cpSync, mkdirSync, readdirSync, readFileSync } from 'fs';
+import { join } from 'path';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 
@@ -20,6 +21,22 @@ export default defineConfig([
     noExternal: [/.*/],
     // Inject version at build time so it works without package.json
     define: { 'process.env.VIBE_DESIGNING_VERSION': JSON.stringify(pkg.version) },
+    async onSuccess() {
+      const SRC_LIB = 'src/libs/ui-ux-pro-max';
+      const DST_LIB = 'dist/libs/ui-ux-pro-max';
+
+      // Copy Python scripts (only .py files)
+      mkdirSync(join(DST_LIB, 'scripts'), { recursive: true });
+      for (const f of readdirSync(join(SRC_LIB, 'scripts'))) {
+        if (f.endsWith('.py')) cpSync(join(SRC_LIB, 'scripts', f), join(DST_LIB, 'scripts', f));
+      }
+
+      // Copy data directory (recursive, exclude .DS_Store)
+      cpSync(join(SRC_LIB, 'data'), join(DST_LIB, 'data'), {
+        recursive: true,
+        filter: (src) => !src.includes('.DS_Store') && !src.includes('__pycache__'),
+      });
+    },
   },
   // Standalone Tunnel → dist/tunnel.js (for Docker)
   {

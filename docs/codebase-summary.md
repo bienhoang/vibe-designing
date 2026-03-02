@@ -41,7 +41,6 @@ vibe-designing/
 │   │   ├── selection.ts       # Selection operations (166 LOC)
 │   │   ├── document.ts        # Document structure (151 LOC)
 │   │   ├── lint.ts            # Design linting (759 LOC)
-│   │   ├── recommend-design.ts # AI design recommendations via ui-ux-pro-max (MCP-only, server-side)
 │   │   ├── connection.ts      # Connection helpers (34 LOC)
 │   │   ├── fonts.ts           # Font management (43 LOC)
 │   │   ├── helpers.ts         # Utility helpers (153 LOC)
@@ -142,7 +141,7 @@ vibe-designing/
 3. Run `npm run build` (codegen runs automatically via prebuild hook)
 4. Tool is auto-registered in both MCP server and plugin dispatcher
 
-### Tool Categories (53+ Tools)
+### Tool Categories (52+ Tools)
 
 | Category | Files | Count | Purpose |
 |----------|-------|-------|---------|
@@ -152,16 +151,8 @@ vibe-designing/
 | **Querying** | node-info, selection, document | 14 tools | Get node info, CSS export, search, selection, viewport, page management |
 | **Icons** | icons | 3 tools | Search icons from Lucide CDN, list providers, create icon components |
 | **Quality** | lint | 1 tool (10 rules) | Design linting: 8 rules + 2 WCAG 2.2 rules + 2 auto-fix rules |
-| **AI Intelligence** | recommend-design | 1 tool | Design system recommendations via ui-ux-pro-max (server-side Python) |
+| **AI Intelligence** | prompts (design_workflow) | 1 prompt | Bundled design intelligence via Python scripts (50+ styles, 97 palettes, 57 fonts) |
 | **Support** | helpers, prompts, fonts, connection | 4 tools + 5 prompts | Ping, channel info, font listing, MCP system prompts |
-
-**tools/recommend-design.ts** — AI Design Recommendations (Server-Only)
-- Spawns ui-ux-pro-max Python CLI via `child_process.execFile` (no shell injection)
-- Auto-detects Python3 binary and search.py script path
-- Returns complete design system: colors, typography, style, layout patterns
-- Graceful fallback with install instructions when dependencies missing
-- 15s timeout, cross-platform path detection
-- Uses `handler` field — runs server-side, no Figma plugin needed
 
 **tools/icons.ts** — Icon System (v0.3.5+, Hybrid Pattern)
 - Server-side: `search_icons` (query Lucide CDN index), `list_icon_sets` (metadata)
@@ -312,11 +303,11 @@ Codegen uses the handler directly instead of wrapping with `sendCommand`. Used f
 
 ```typescript
 export const mcpTools: ToolDefinition[] = [{
-  name: "recommend_design",
+  name: "my_server_tool",
   description: "...",
   schema: { query: z.string() },
   handler: async (params) => {
-    // Server-side logic (e.g., spawn Python process)
+    // Server-side logic (e.g., spawn process, read files)
     return { content: [{ type: "text", text: output }] };
   },
 }];
@@ -352,10 +343,11 @@ When applying visual properties:
 ## Build System
 
 **tsup Configuration:**
-- Two targets:
-  - **MCP Server:** ESM + CJS, Node 18+, bundled
+- Three targets:
+  - **MCP Server:** ESM + CJS, Node 18+, bundled + libs copy (ui-ux-pro-max Python scripts & CSV data)
+  - **Standalone Tunnel:** ESM, Node 18+ (Docker)
   - **Figma Plugin:** IIFE, ES2015, separate code + ui + manifest
-- Output: `dist/mcp.js` (server), `plugin/code.js`, `plugin/ui.html`, `plugin/manifest.json`
+- Output: `dist/mcp.js` (server), `dist/libs/ui-ux-pro-max/` (bundled design intelligence), `plugin/code.js`, `plugin/ui.html`, `plugin/manifest.json`
 
 **TypeScript:**
 - Target: ES2022

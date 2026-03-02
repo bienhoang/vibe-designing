@@ -82,9 +82,10 @@
 
 ## Phase 2: Community & Polish (In Progress, 2026 Q1-Q2)
 
-### Design Intelligence (v0.3.0+)
-- [x] recommend_design tool (MCP server-side, spawns ui-ux-pro-max Python CLI)
-- [x] design_workflow prompt for guided end-to-end design creation
+### Design Intelligence (v0.3.0+ → v0.5.0 bundled)
+- [x] ~~recommend_design tool~~ (removed in v0.5.0 — replaced by bundled prompt)
+- [x] design_workflow prompt with bundled Python scripts (50+ styles, 97 palettes, 57 fonts)
+- [x] ui-ux-pro-max bundled in dist/libs/ at build time (no separate install)
 - [ ] design_system analysis (detect palette, typography patterns)
 - [ ] Auto-suggest design patterns for context
 
@@ -380,8 +381,8 @@ Phase 5 (Cloud)
 - ✓ Simplified deployment
 
 ### v0.3.0 (2026 Q1-Q2: Design Intelligence & Quality)
-- ✓ Design recommendations via ui-ux-pro-max integration
-- ✓ design_workflow prompt for guided design creation
+- ✓ Design recommendations via ui-ux-pro-max integration (→ bundled in v0.5.0)
+- ✓ design_workflow prompt for guided design creation (→ enhanced in v0.5.0)
 - ✓ Icon system (search/create from Lucide CDN, hybrid handler pattern)
 - ✓ Server-only + hybrid handler patterns in codegen
 - [ ] Tests >80% coverage
