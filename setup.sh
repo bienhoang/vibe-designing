@@ -87,10 +87,10 @@ if [ -d "$HOME/.claude" ]; then
 
 When the user asks to design anything in Figma, you MUST use Vibe Designing MCP tools directly.
 
-## IMPORTANT — Do NOT Do These
+## CRITICAL — Do NOT Do These
 
+- Do NOT spawn ANY Agent (no ui-ux-designer, no general-purpose, no subagents) — agents cannot access MCP tools. YOU must call MCP tools directly in the main conversation.
 - Do NOT call `Skill(ui-ux-pro-max)` — design intelligence is already bundled inside Vibe Designing
-- Do NOT spawn `ui-ux-designer` or other design agents — they cannot access MCP tools
 - Do NOT use `listMcpResources` — it cannot discover deferred tools
 - Do NOT run Python scripts from `~/.claude/skills/ui-ux-pro-max/` — use the MCP `design_workflow` tool instead
 
