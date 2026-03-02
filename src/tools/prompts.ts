@@ -43,7 +43,20 @@ export function registerPrompts(server: McpServer) {
      * no-autolayout: frames with children but no auto-layout
      * default-name: nodes still named "Frame", "Rectangle", etc.
    - Use lint_fix_autolayout() and lint_fix_replace_shape_with_frame() to auto-fix
-   - Lint early and often — it is cheaper to fix issues during creation than after`,
+   - Lint early and often — it is cheaper to fix issues during creation than after
+
+7. Icons — Add Visual Cues:
+   - Use search_icons to find icons by keyword before placing them
+   - Use create_icon to place icons — they are created as reusable Components
+   - Common icon mappings:
+     * Buttons: arrow-right, plus, trash-2, check, x, download, upload
+     * Navigation: menu, home, chevron-left, chevron-right, search
+     * Status: check-circle, alert-triangle, info, x-circle, loader
+     * Forms: eye, eye-off, calendar, upload, search, filter
+     * Actions: edit, copy, share, settings, log-out, refresh-cw
+   - Workflow: search_icons("keyword") → pick best match → create_icon with parentId
+   - Icons default to 24x24px, use size param to adjust
+   - Use color param to match your design tokens`,
         },
       }],
       description: "Best practices for working with Figma designs",
@@ -268,10 +281,16 @@ Sections: Hero, Features, Testimonials, CTA, Footer. Use fillStyleName for backg
 create_text(text: "...", parentId: frameId, textStyleName: "heading", fillStyleName: "text")
 After each section: lint_node(nodeId: pageNodeId) — fix hardcoded colors, missing styles, no auto-layout.
 
+## Step 6: Add Icons
+search_icons(query: "home") → find icon names
+create_icon(name: "home", size: 24, color: "#1a1a1a", parentId: navFrameId)
+Place icons inside auto-layout frames alongside text for proper alignment.
+
 ## Tips
 - Always use design tokens — never hardcode colors
 - Auto-layout on every container, name all layers descriptively
-- Lint early and often`,
+- Lint early and often
+- Use search_icons → create_icon for all icons (never hardcode SVG)`,
         },
       }],
       description: "Step-by-step guide for creating complete Figma designs with AI recommendations",

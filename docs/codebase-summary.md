@@ -20,10 +20,11 @@ vibe-designing/
 │   │   ├── ui.html            # Plugin UI and connection panel (878 LOC)
 │   │   ├── manifest.json      # Plugin declaration
 │   │   └── setcharacters.js   # Smart text content setter (215 LOC)
-│   ├── tools/                 # Tool modules (~4,400 LOC across 16 files)
+│   ├── tools/                 # Tool modules (~4,600 LOC across 18 files)
 │   │   ├── _mcp-registry.generated.ts    # Auto-generated MCP registration (v0.2.0+)
 │   │   ├── _figma-registry.generated.ts  # Auto-generated plugin dispatch (v0.2.0+)
 │   │   ├── schemas.ts         # Zod validation schemas (189 LOC)
+│   │   ├── types.ts           # Shared type definitions (includes handler field)
 │   │   ├── components.ts      # Component creation tools (441 LOC)
 │   │   ├── create-frame.ts    # Frame creation logic (250 LOC)
 │   │   ├── create-shape.ts    # Shape creation (199 LOC)
@@ -35,6 +36,7 @@ vibe-designing/
 │   │   ├── update-frame.ts    # Frame properties (109 LOC)
 │   │   ├── styles.ts          # Design token system (420 LOC)
 │   │   ├── variables.ts       # Variable management (381 LOC)
+│   │   ├── icons.ts           # Icon system (search/create from CDN, v0.3.5+) (169 LOC)
 │   │   ├── node-info.ts       # Node querying (220 LOC)
 │   │   ├── selection.ts       # Selection operations (166 LOC)
 │   │   ├── document.ts        # Document structure (151 LOC)
@@ -44,7 +46,10 @@ vibe-designing/
 │   │   ├── fonts.ts           # Font management (43 LOC)
 │   │   ├── helpers.ts         # Utility helpers (153 LOC)
 │   │   ├── prompts.ts         # MCP prompts (297 LOC)
-│   │   └── types.ts           # Shared type definitions
+│   │   └── icon-providers/    # Icon provider abstraction (v0.3.5+)
+│   │       ├── types.ts       # IconProvider interface
+│   │       ├── registry.ts    # Singleton registry + Lucide provider manager
+│   │       └── lucide.ts      # LucideProvider: CDN-based icon source
 │   ├── utils/                 # Utility modules (~1,100 LOC)
 │   │   ├── figma-helpers.ts   # Plugin runtime helpers (267 LOC)
 │   │   ├── serialize-node.ts  # Node serialization (218 LOC)
@@ -137,14 +142,15 @@ vibe-designing/
 3. Run `npm run build` (codegen runs automatically via prebuild hook)
 4. Tool is auto-registered in both MCP server and plugin dispatcher
 
-### Tool Categories (50+ Tools)
+### Tool Categories (53+ Tools)
 
 | Category | Files | Count | Purpose |
 |----------|-------|-------|---------|
-| **Creation** | components, create-frame, create-shape, create-text | 16 tools | Create nodes, components, variants, instances, SVG imports, boolean ops |
+| **Creation** | components, create-frame, create-shape, create-text, icons | 19 tools | Create nodes, components, variants, instances, SVG imports, boolean ops, icons |
 | **Modification** | modify-node, fill-stroke, text, effects, update-frame | 17 tools | Move, resize, delete, clone, update properties, set colors, effects |
 | **Styling** | styles, variables | 16 tools | Design tokens, paint/text/effect styles, variable collections & bindings |
 | **Querying** | node-info, selection, document | 14 tools | Get node info, CSS export, search, selection, viewport, page management |
+| **Icons** | icons | 3 tools | Search icons from Lucide CDN, list providers, create icon components |
 | **Quality** | lint | 1 tool (10 rules) | Design linting: 8 rules + 2 WCAG 2.2 rules + 2 auto-fix rules |
 | **AI Intelligence** | recommend-design | 1 tool | Design system recommendations via ui-ux-pro-max (server-side Python) |
 | **Support** | helpers, prompts, fonts, connection | 4 tools + 5 prompts | Ping, channel info, font listing, MCP system prompts |
@@ -156,6 +162,20 @@ vibe-designing/
 - Graceful fallback with install instructions when dependencies missing
 - 15s timeout, cross-platform path detection
 - Uses `handler` field — runs server-side, no Figma plugin needed
+
+**tools/icons.ts** — Icon System (v0.3.5+, Hybrid Pattern)
+- Server-side: `search_icons` (query Lucide CDN index), `list_icon_sets` (metadata)
+- Hybrid: `create_icon` fetches SVG server-side, sends to Figma plugin for component creation
+- Color override: Replace `currentColor` with hex before dispatching to plugin
+- Figma plugin creates Icon/{provider}/{name} component on dedicated "Icons" page
+- Creates instance at specified (x, y, size) position
+- Designed for reusable icon design system
+
+**tools/icon-providers/** — Icon Provider Abstraction (v0.3.5+)
+- **types.ts:** `IconProvider` interface for pluggable providers
+- **lucide.ts:** `LucideProvider` (CDN-based, 4000+ icons)
+- **registry.ts:** `IconRegistry` singleton managing providers
+- Pattern: Define provider → register → use via `registry.get()`
 
 ### Utility Modules
 

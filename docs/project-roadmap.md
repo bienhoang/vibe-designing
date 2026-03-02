@@ -16,8 +16,8 @@
 - ✓ Figma plugin (UI + code)
 - ✓ Build system (tsup for dual targets)
 
-### Design Tools (50+)
-**Creation (16 tools)**
+### Design Tools (53+)
+**Creation (19 tools, includes icons)**
 - ✓ Frame/auto-layout creation
 - ✓ Shape primitives (rectangle, ellipse, line, section)
 - ✓ Text node creation with smart fonts
@@ -87,6 +87,13 @@
 - [x] design_workflow prompt for guided end-to-end design creation
 - [ ] design_system analysis (detect palette, typography patterns)
 - [ ] Auto-suggest design patterns for context
+
+### Icon System (v0.3.5+)
+- [x] search_icons & list_icon_sets tools (Lucide CDN, 4000+ icons)
+- [x] create_icon hybrid tool (fetch SVG, create component, place instance)
+- [x] IconProvider abstraction (pluggable provider pattern)
+- [x] Icon color override (hex replacement in SVG)
+- [ ] Additional providers (Font Awesome, Feather, Material Icons)
 
 ### Accessibility & Documentation
 - [ ] Interactive tool documentation with examples
@@ -303,11 +310,11 @@ Not our limitations but external:
 
 | Area | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Phase 5 |
 |------|---------|---------|---------|---------|---------|
-| **Creation** | 16/16 | 16/16 | 16/16 | 18/18 | 20/20 |
+| **Creation** | 16/16 | 19/19 | 19/19 | 21/21 | 23/23 |
 | **Modification** | 17/17 | 17/17 | 19/19 | 25/25 | 30/30 |
 | **Querying** | 14/14 | 20/20 | 25/25 | 30/30 | 35/35 |
 | **Systems** | 16/16 | 20/20 | 25/25 | 30/30 | 35/35 |
-| **Intelligence** | 0/1 | 1/3 | 2/5 | 3/5 | 5/5 |
+| **Intelligence** | 0/1 | 2/3 | 3/5 | 4/5 | 5/5 |
 | **Collab** | 0/5 | 0/5 | 5/5 | 5/5 | 5/5 |
 
 ---
@@ -375,10 +382,19 @@ Phase 5 (Cloud)
 ### v0.3.0 (2026 Q1-Q2: Design Intelligence & Quality)
 - ✓ Design recommendations via ui-ux-pro-max integration
 - ✓ design_workflow prompt for guided design creation
+- ✓ Icon system (search/create from Lucide CDN, hybrid handler pattern)
+- ✓ Server-only + hybrid handler patterns in codegen
 - [ ] Tests >80% coverage
 - [ ] Enhanced UI
 - [ ] Community integrations
 - [ ] Advanced search
+
+### v0.3.5 (2026 Q1: Icon System)
+- ✓ Figma Icon System: search_icons, list_icon_sets, create_icon tools
+- ✓ IconProvider abstraction + LucideProvider (4000+ CDN icons)
+- ✓ Hybrid tool pattern: server-side icon fetch + plugin component creation
+- ✓ Icon reusability via component library on "Icons" page
+- ✓ Color override support (hex override currentColor in SVG)
 
 ### v0.4.0 (2026 Q3: Collaboration)
 - [ ] Multi-user support

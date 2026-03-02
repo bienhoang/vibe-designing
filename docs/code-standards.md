@@ -23,7 +23,12 @@ src/
 │   ├── schemas.ts           # Zod validation schemas
 │   ├── types.ts             # Shared TypeScript types (includes handler field, v0.3.0+)
 │   ├── recommend-design.ts  # Server-only tool: Python subprocess dispatcher (v0.3.0+)
+│   ├── icons.ts             # Icon system: search, list, create (hybrid pattern, v0.3.5+)
 │   ├── prompts.ts           # MCP prompts (including design_workflow v0.3.0+)
+│   ├── icon-providers/      # Icon provider abstraction (v0.3.5+)
+│   │   ├── types.ts         # IconProvider interface
+│   │   ├── registry.ts      # Singleton registry + provider manager
+│   │   └── lucide.ts        # LucideProvider: CDN-based icon source
 │   └── [figma-tools]/       # Figma-connected tools (dispatch to plugin)
 │       ├── components.ts
 │       ├── create-frame.ts
@@ -219,10 +224,50 @@ export const mcpTools: ToolDefinition[] = [
 export const figmaHandlers = {};  // Empty — no plugin dispatch needed
 ```
 
+#### Hybrid Tool (Server + Plugin)
+
+For tools combining server-side processing with Figma plugin execution (e.g., fetch resource, create design element):
+
+```typescript
+// Server-side: process/fetch data
+async function createIconHandler(params: any, sendCommand?: SendCommandFn) {
+  const provider = await iconRegistry.get(params.provider);
+  let svg = await provider.getSvg(params.name);
+
+  // Apply overrides
+  if (params.color) {
+    svg = svg.replace(/currentColor/g, params.color);
+  }
+
+  // Dispatch to plugin
+  return await sendCommand("create_icon", { svg, ...params });
+}
+
+// Plugin: create design element from processed data
+export const figmaHandlers = {
+  create_icon: async (params) => {
+    const svgNode = figma.createNodeFromSvg(params.svg);
+    const component = figma.createComponent();
+    // ... component creation logic
+    return { id: component.id };
+  }
+};
+
+export const mcpTools: ToolDefinition[] = [{
+  name: "create_icon",
+  description: "Create icon component",
+  schema: { name: z.string(), ... },
+  handler: createIconHandler,  // Server-side preprocessing
+}];
+```
+
+**Key:** Both `handler` and corresponding `figmaHandlers` entry exist.
+
 **Declarative Guidelines (v0.2.0+):**
 - Export `mcpTools` array with `ToolDefinition` objects
 - Auto-wrapped by codegen into server.tool() calls
 - Use `handler` field for **server-only tools** (spawns processes, reads files, etc.)
+- Use `handler` + `figmaHandlers` for **hybrid tools** (preprocess, then dispatch)
 - Without `handler`: codegen wraps in sendCommand() → Figma plugin dispatch
 - Export `figmaHandlers` (required for Figma-connected tools, can be empty for server-only)
 - No manual `registerMcpTools()` function needed
@@ -705,33 +750,12 @@ logger.log("Color updated", { nodeId, oldColor: "red", newColor: "blue" });
 // logger.log("User request", { userId, apiKey, token });
 ```
 
-## Build & TypeScript Config
-
-### TypeScript Settings
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "declaration": true
-  }
-}
-```
-
-**Rationale:**
-- `strict: false` — Lenient for AI agent flexibility
-- `ES2022` target — Modern Node.js capabilities
-- `declaration: true` — Generate .d.ts for API contracts
+## Build & Deployment
 
 ### Build Output
-
 - **MCP Server:** ESM + CJS (Node 18+)
 - **Figma Plugin:** IIFE (ES2015, bundled)
+- **TypeScript:** ES2022 target, strict: false (AI flexibility)
 
 ## Deployment Standards
 
@@ -753,42 +777,9 @@ logger.log("Color updated", { nodeId, oldColor: "red", newColor: "blue" });
 
 ## Common Patterns & Anti-Patterns
 
-### ✓ Do This
+**Do:** Use type guards, validate early, consistent response structures, named exports, serialize with budget.
 
-```typescript
-// 1. Use type guards
-function updateFrame(node: SceneNode) {
-  if (node.type !== "FRAME") return;
-  node.layoutMode = "VERTICAL";
-}
-
-// 2. Return consistent response structure
-return mcpJson({ success: true, nodeId, properties });
-
-// 3. Use named exports
-export { registerMcpTools, figmaHandlers };
-
-// 4. Validate early
-const schema = z.object({ nodeId: flexString });
-const params = schema.parse(input);
-```
-
-### ✗ Don't Do This
-
-```typescript
-// 1. Avoid type assertions
-const frame = node as FrameNode; // Unsafe
-
-// 2. Inconsistent responses
-if (success) return { data }; // Sometimes has 'data'
-else return { error }; // Sometimes has 'error'
-
-// 3. Default exports (hard to find)
-export default registerMcpTools;
-
-// 4. Validate late
-figma.getNodeById(params.nodeId); // Might be undefined
-```
+**Don't:** Use type assertions, inconsistent responses, default exports, validate late, log sensitive data, trust untrusted input.
 
 ---
 

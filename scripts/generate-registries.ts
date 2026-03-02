@@ -67,7 +67,7 @@ export function registerAllTools(server: McpServer, sendCommand: SendCommandFn) 
     if (tool.handler) {
       server.tool(tool.name, tool.description, tool.schema, async (params: any) => {
         try {
-          return await tool.handler!(params);
+          return await tool.handler!(params, sendCommand);
         } catch (e) {
           return mcpError(\`Error in \${tool.name}\`, e);
         }
