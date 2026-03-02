@@ -48,14 +48,16 @@ AI agents send design commands via MCP tools. The MCP server includes a built-in
 
 | Category | Tools | Examples |
 |----------|-------|----------|
-| **Create** | 16 | Frames, components, text, shapes, SVG imports, boolean ops |
+| **Create** | 19 | Frames, components, text, shapes, SVG imports, boolean ops, icons |
 | **Modify** | 17 | Move, resize, colors, text, effects, constraints, exports |
 | **Design Systems** | 16 | Create styles, variables, collections, bindings |
+| **Icons** | 3 | Search 4000+ Lucide icons, list providers, create icon components |
 | **Query** | 14 | Get node info, search, selection, serialize design |
 | **Quality** | 1 | Lint designs, WCAG 2.2 validation, auto-fix |
-| **Total** | **50+** | Cover creation to production |
+| **AI Intelligence** | 1 | Design system recommendations via ui-ux-pro-max |
+| **Total** | **53+** | Cover creation to production |
 
-See full [tool reference](./docs/codebase-summary.md#tool-categories-50-tools).
+See full [tool reference](./docs/codebase-summary.md#tool-categories-53-tools).
 
 ## Setup
 
