@@ -13,7 +13,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const TOOLS_DIR = join(__dirname, "..", "src", "tools");
-const SKIP = new Set(["helpers.ts", "schemas.ts", "types.ts", "prompts.ts"]);
+const SKIP = new Set(["helpers.ts", "schemas.ts", "types.ts"]);
 
 // Discover tool modules — track MCP and Figma exports separately
 const mcpModules: string[] = [];

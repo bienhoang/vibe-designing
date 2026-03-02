@@ -55,7 +55,7 @@ const autoLayoutItem = z.object({
 // ─── MCP Tool Definitions ───────────────────────────────────────
 
 export const mcpTools: ToolDefinition[] = [
-  { name: "create_frame", description: "Create frames in Figma. Supports batch. Prefer fillStyleName or fillVariableId over hardcoded fillColor for design token consistency. IMPORTANT: For new page/screen designs, first read the 'design_workflow' prompt to generate an AI design system (colors, typography, styles) before creating elements.", schema: { items: flexJson(z.array(frameItem)).describe("Array of frames to create"), depth: S.depth } },
+  { name: "create_frame", description: "Create frames in Figma. Supports batch. Prefer fillStyleName or fillVariableId over hardcoded fillColor for design token consistency. IMPORTANT: For new page/screen designs, call the `design_workflow` tool FIRST to generate an AI design system (colors, typography, styles) before creating any elements.", schema: { items: flexJson(z.array(frameItem)).describe("Array of frames to create"), depth: S.depth } },
   { name: "create_auto_layout", description: "Wrap existing nodes in an auto-layout frame. One call replaces create_frame + update_frame + insert_child × N.", schema: { items: flexJson(z.array(autoLayoutItem)).describe("Array of auto-layout wraps to perform"), depth: S.depth } },
 ];
 

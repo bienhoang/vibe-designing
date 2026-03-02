@@ -29,7 +29,7 @@ const textItem = z.object({
 // ─── MCP Tool Definitions ───────────────────────────────────────
 
 export const mcpTools: ToolDefinition[] = [
-  { name: "create_text", description: "Create text nodes in Figma. Uses Inter font. Max 10 items per batch. Use textStyleName for typography and fontColorStyleName for fill color. Tip: Create text styles via create_text_style first (see 'design_workflow' prompt), then reference them with textStyleName.", schema: { items: flexJson(z.array(textItem).max(10)).describe("Array of text nodes to create (max 10)"), depth: S.depth } },
+  { name: "create_text", description: "Create text nodes in Figma. Uses Inter font. Max 10 items per batch. Use textStyleName for typography and fontColorStyleName for fill color. Tip: Call the `design_workflow` tool first to create text styles, then reference them with textStyleName.", schema: { items: flexJson(z.array(textItem).max(10)).describe("Array of text nodes to create (max 10)"), depth: S.depth } },
 ];
 
 // ─── Figma Handlers ──────────────────────────────────────────────
