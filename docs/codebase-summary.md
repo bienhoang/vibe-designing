@@ -141,7 +141,7 @@ vibe-designing/
 3. Run `npm run build` (codegen runs automatically via prebuild hook)
 4. Tool is auto-registered in both MCP server and plugin dispatcher
 
-### Tool Categories (52+ Tools)
+### Tool Categories (54 Tools)
 
 | Category | Files | Count | Purpose |
 |----------|-------|-------|---------|
@@ -149,9 +149,10 @@ vibe-designing/
 | **Modification** | modify-node, fill-stroke, text, effects, update-frame | 17 tools | Move, resize, delete, clone, update properties, set colors, effects |
 | **Styling** | styles, variables | 16 tools | Design tokens, paint/text/effect styles, variable collections & bindings |
 | **Querying** | node-info, selection, document | 14 tools | Get node info, CSS export, search, selection, viewport, page management |
+| **Batch Operations** | execute_batch | 1 tool | Send up to 50 commands in single round-trip, with `$prev[N].id` references |
 | **Icons** | icons | 3 tools | Search icons from Lucide CDN, list providers, create icon components |
 | **Quality** | lint | 1 tool (10 rules) | Design linting: 8 rules + 2 WCAG 2.2 rules + 2 auto-fix rules |
-| **AI Intelligence** | prompts (design_workflow) | 1 prompt | Bundled design intelligence via Python scripts (50+ styles, 97 palettes, 57 fonts) |
+| **AI Intelligence** | prompts (design_workflow, design_generation_strategy) | 2 prompts | Bundled design intelligence via Python scripts (50+ styles, 97 palettes, 57 fonts) + batching strategy |
 | **Support** | helpers, prompts, fonts, connection | 4 tools + 5 prompts | Ping, channel info, font listing, MCP system prompts |
 
 **tools/icons.ts** — Icon System (v0.3.5+, Hybrid Pattern)
@@ -367,7 +368,7 @@ When applying visual properties:
 - **Tokens:** 82,406 (repomix)
 - **Largest file:** ui.html (878 LOC)
 - **Largest tool:** lint.ts (759 LOC)
-- **MCP tools:** 50+
+- **MCP tools:** 54 (includes execute_batch for batching operations)
 - **Figma API node types:** 26+
 - **Accessibility rules:** 10 (8 design + 2 WCAG)
 

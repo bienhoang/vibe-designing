@@ -24,19 +24,28 @@ export async function nodeSnapshot(id: string, depth: number): Promise<any> {
  * Process batch items with optional depth enrichment.
  * Reads `items` (array) and `depth` (number|undefined) from params.
  * If depth is defined and a result has an `id`, merges node snapshot into the result.
+ *
+ * When `opts.deferSnapshot` is true, all mutations run first, then snapshots
+ * are taken in a single pass with a shared node budget. This is faster for
+ * large batches because Figma API isn't interleaving mutations with reads.
  */
 export async function batchHandler(
   params: any,
   fn: (item: any) => Promise<any>,
+  opts?: { deferSnapshot?: boolean },
 ): Promise<any> {
   const items = params.items || [params];
   const depth = params.depth;
-  const results = [];
+  const deferred = opts?.deferSnapshot && depth !== undefined;
+  const results: any[] = [];
   const warningSet = new Set<string>();
+
+  // Phase 1: Execute all mutations
   for (const item of items) {
     try {
       let result = await fn(item);
-      if (depth !== undefined && result?.id) {
+      // Inline snapshot if NOT deferred
+      if (!deferred && depth !== undefined && result?.id) {
         const snapshot = await nodeSnapshot(result.id, depth);
         if (snapshot) result = { ...result, ...snapshot };
       }
@@ -55,6 +64,26 @@ export async function batchHandler(
       results.push({ error: e.message });
     }
   }
+
+  // Phase 2: Deferred snapshots — one pass after all mutations (shared budget)
+  if (deferred) {
+    const budget = { remaining: DEFAULT_NODE_BUDGET };
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      if (r?.error || !r?.id || budget.remaining <= 0) continue;
+      try {
+        const node = await figma.getNodeByIdAsync(r.id);
+        if (!node) continue;
+        const snapshot = await serializeNode(node, depth, 0, budget);
+        if (budget.remaining <= 0) {
+          snapshot._truncated = true;
+          snapshot._notice = "Snapshot truncated (shared budget exceeded).";
+        }
+        results[i] = { ...r, ...snapshot };
+      } catch { /* skip failed snapshots */ }
+    }
+  }
+
   const out: any = { results };
   if (warningSet.size > 0) out.warnings = [...warningSet];
   return out;

@@ -155,7 +155,7 @@ Vibe Designing is a distributed system connecting AI agents to Figma through thr
 **Execution Model:**
 - Event-driven (Figma doesn't support async operations)
 - All operations are synchronous except UI callbacks
-- Auto-focus after mutations (Figma UX convention)
+- Auto-focus after mutations (debounced 300ms, v0.4.1+) — prevents excessive focus thrashing during batch operations
 
 #### ui.html (Plugin UI - iframe)
 - WebSocket client connecting to relay
@@ -558,6 +558,40 @@ GET /channels → Returns active channel count
 → Used for monitoring uptime
 ```
 
+## Batch Operations (v0.4.1+)
+
+### execute_batch Tool
+
+The `execute_batch` tool enables efficient multi-command execution in a single round-trip:
+
+**Features:**
+- **Single API Call:** Send up to 50 commands in one request
+- **Cross-command References:** Commands can reference outputs from previous commands using `$prev[N].id`
+- **Atomic Semantics:** All commands fail or succeed together
+- **Reduced Latency:** Typical batch operation <200ms (vs. 50 individual ops = 2.5s)
+
+**Example:**
+```json
+{
+  "type": "batch",
+  "commands": [
+    { "action": "create_frame", "params": { "name": "Group" } },
+    { "action": "create_frame", "params": { "name": "Child", "parentId": "$prev[0].id" } },
+    { "action": "set_fill_color", "params": { "nodeId": "$prev[1].id", "color": "#FF0000" } }
+  ]
+}
+```
+
+**batchHandler Options (v0.4.1+):**
+- `deferSnapshot`: Skip intermediate snapshots during batch processing for faster batch operations
+- Reduces serialization overhead for large operations
+
+### Performance Impact
+
+- **Before (v0.4.0):** 50 frame operations = ~2.5s (50 round-trips)
+- **After (v0.4.1):** 50 frame operations in batch = ~200ms (1 round-trip)
+- **AutoFocus debouncing:** Reduces focus overhead from ~50 calls → 1 final focus event
+
 ## Future Architecture Considerations
 
 ### Collaborative Design (Multi-user)
@@ -586,5 +620,5 @@ Challenges:
 
 ---
 
-**Last Updated:** 2026-03-02
-**Architecture Version:** 2.0 (v0.2.0)
+**Last Updated:** 2026-03-03
+**Architecture Version:** 2.1 (v0.4.1, includes execute_batch and debounced autoFocus)

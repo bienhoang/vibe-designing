@@ -601,4 +601,101 @@ python3 "${SEARCH_SCRIPT}" "elegant luxury serif" --domain typography
       description: "End-to-end Figma design creation with bundled AI design intelligence",
     })
   );
+
+  server.prompt(
+    "design_generation_strategy",
+    "Speed optimization: batch operations by type, use items[] arrays, minimize round-trips",
+    () => ({
+      messages: [{
+        role: "assistant" as const,
+        content: {
+          type: "text" as const,
+          text: `# Design Generation Strategy — Speed Optimization
+
+## 1. Batching Rules
+
+Group mutations by **operation type**, not by visual section.
+
+**Bad** (interleaved — 6 round-trips):
+\`\`\`
+create_frame({name: "Card1"})
+set_fill_color({items: [{nodeId: "card1", color: "#FFF"}]})
+create_text({text: "Title1"})
+create_frame({name: "Card2"})
+set_fill_color({items: [{nodeId: "card2", color: "#FFF"}]})
+create_text({text: "Title2"})
+\`\`\`
+
+**Good** (grouped — 3 round-trips):
+\`\`\`
+create_frame({name: "Card1"})   // batch all creates
+create_frame({name: "Card2"})
+set_fill_color({items: [        // batch all fills
+  {nodeId: "card1", color: "#FFF"},
+  {nodeId: "card2", color: "#FFF"},
+]})
+create_text({text: "Title1"})   // batch all text
+create_text({text: "Title2"})
+\`\`\`
+
+**Best** (execute_batch — 1 round-trip):
+\`\`\`
+execute_batch({commands: [
+  {command: "create_frame", params: {name: "Card1"}},
+  {command: "create_frame", params: {name: "Card2"}},
+  {command: "set_fill_color", params: {items: [
+    {nodeId: "$prev[0].id", color: "#FFF"},
+    {nodeId: "$prev[1].id", color: "#FFF"},
+  ]}},
+  {command: "create_text", params: {text: "Title1", parentId: "$prev[0].id"}},
+  {command: "create_text", params: {text: "Title2", parentId: "$prev[1].id"}},
+]})
+\`\`\`
+
+## 2. Tools with Batch Support (items[] arrays)
+
+Always use \`items[]\` when modifying multiple nodes:
+- **Fills/Strokes**: set_fill_color, set_stroke_color, set_corner_radius, set_opacity
+- **Text**: set_text_content, set_text_properties
+- **Layout**: move_node, resize_node, set_constraints
+- **Structure**: delete_node, clone_node, insert_child
+- **Effects**: set_effects
+- **Properties**: set_node_properties
+- **Styles**: apply_style_to_node
+
+## 3. Optimal Build Order
+
+\`\`\`
+1. Design tokens    → create_paint_style, create_text_style, create_variable
+2. Frame structures → all create_frame calls (with auto-layout params)
+3. Shape elements   → create_rectangle, create_ellipse, create_line
+4. Text nodes       → all create_text calls (with textStyleName)
+5. Styling          → batch set_fill_color, set_stroke_color, apply_style_to_node
+6. Icons            → search_icons → create_icon
+7. Lint             → lint_node per section
+\`\`\`
+
+## 4. Round-trip Minimization
+
+- **Plan entire sections** before executing — collect all operations, then batch
+- **Collect node IDs** from creation results, then batch-modify with items[]
+- **Use depth: 0** or omit depth during creation for faster response
+- **Only request deep snapshots** at verification points (lint, final check)
+- **Use execute_batch** to send 10-50 commands in a single round-trip
+
+## 5. Anti-patterns (Avoid)
+
+| Anti-pattern | Fix |
+|---|---|
+| One tool call per node modification | Batch 5-20 items in one call |
+| Requesting depth snapshot on every mutation | Omit depth during creation, snapshot at end |
+| Creating then immediately modifying same node | Combine in create params (color, layout at creation) |
+| Reading full tree between each operation | Only read at verification checkpoints |
+| Separate calls for each section's fills | Group all fills across sections into one items[] call |
+`,
+        },
+      }],
+      description: "Speed optimization for design generation",
+    })
+  );
 }

@@ -2,6 +2,10 @@
 // Built by tsup into code.js (IIFE bundle) for the Figma plugin sandbox
 
 import { allFigmaHandlers } from "../tools/_figma-registry.generated";
+import { setHandlerRegistry } from "../tools/execute-batch";
+
+// Wire up execute_batch's handler registry to avoid circular imports
+setHandlerRegistry(allFigmaHandlers);
 
 // ─── Plugin State ────────────────────────────────────────────────
 
@@ -37,6 +41,7 @@ const SKIP_FOCUS = new Set([
   "get_variable_by_id", "get_variable_collection_by_id",
   "search_nodes", "search_components", "scan_text_nodes", "export_node_as_image",
   "lint_node", "get_node_variables", "ping",
+  "execute_batch",
 ]);
 
 function extractNodeIds(result: any, params: any): string[] {
@@ -69,12 +74,34 @@ async function autoFocus(nodeIds: string[]) {
   }
 }
 
-// ─── Message Handling ────────────────────────────────────────────
+// ─── Debounced AutoFocus ─────────────────────────────────────────
+// During rapid AI-driven generation, viewport jumps are noise.
+// Collect node IDs across a burst and focus once after 300ms idle.
 
-// Serialized autoFocus: tracked so the next command waits for it to finish.
-// This prevents race conditions where viewport/selection changes from autoFocus
-// interfere with getNodeByIdAsync in the next command.
-let pendingAutoFocus: Promise<void> | null = null;
+let focusTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingFocusIds: string[] = [];
+const FOCUS_DEBOUNCE_MS = 300;
+
+const MAX_FOCUS_IDS = 100;
+
+function scheduleFocus(ids: string[]) {
+  pendingFocusIds.push(...ids);
+  // Cap to prevent unbounded growth during sustained bursts
+  if (pendingFocusIds.length > MAX_FOCUS_IDS) {
+    pendingFocusIds = pendingFocusIds.slice(-MAX_FOCUS_IDS);
+  }
+  if (focusTimer) clearTimeout(focusTimer);
+  focusTimer = setTimeout(() => {
+    const idsToFocus = [...new Set(pendingFocusIds)];
+    pendingFocusIds = [];
+    focusTimer = null;
+    if (idsToFocus.length > 0) {
+      autoFocus(idsToFocus).catch(() => {});
+    }
+  }, FOCUS_DEBOUNCE_MS);
+}
+
+// ─── Message Handling ────────────────────────────────────────────
 
 figma.ui.onmessage = async (msg: any) => {
   switch (msg.type) {
@@ -89,23 +116,23 @@ figma.ui.onmessage = async (msg: any) => {
       break;
     case "execute-command":
       try {
-        // Wait for any pending autoFocus from the previous command
-        if (pendingAutoFocus) {
-          await pendingAutoFocus;
-          pendingAutoFocus = null;
-        }
         const result = await handleCommand(msg.command, msg.params);
         figma.ui.postMessage({
           type: "command-result",
           id: msg.id,
           result,
         });
-        // Start autoFocus after response is sent (non-blocking for current command,
-        // but the next command will await it before running)
-        if (!SKIP_FOCUS.has(msg.command)) {
+        // Schedule debounced autoFocus (merges IDs across rapid commands)
+        if (msg.command === "execute_batch" && result?.results) {
+          // Collect all created/modified node IDs from batch results
+          const ids = result.results
+            .filter((r: any) => r?.id && !r.error)
+            .map((r: any) => r.id);
+          if (ids.length > 0) scheduleFocus(ids);
+        } else if (!SKIP_FOCUS.has(msg.command)) {
           const ids = extractNodeIds(result, msg.params);
           if (ids.length > 0) {
-            pendingAutoFocus = autoFocus(ids).catch(() => {});
+            scheduleFocus(ids);
           }
         }
       } catch (error: any) {
