@@ -9,3 +9,4 @@ certs/
 plans/
 .DS_Store
 .npmrc
+src/.DS_Store

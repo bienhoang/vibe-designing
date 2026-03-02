@@ -15,8 +15,9 @@ const __dirname = dirname(__filename);
 const TOOLS_DIR = join(__dirname, "..", "src", "tools");
 const SKIP = new Set(["helpers.ts", "schemas.ts", "types.ts", "prompts.ts"]);
 
-// Discover tool modules by checking for mcpTools or figmaHandlers exports
-const modules: string[] = [];
+// Discover tool modules — track MCP and Figma exports separately
+const mcpModules: string[] = [];
+const figmaModules: string[] = [];
 for (const file of readdirSync(TOOLS_DIR).sort()) {
   if (!file.endsWith(".ts")) continue;
   if (SKIP.has(file)) continue;
@@ -24,12 +25,13 @@ for (const file of readdirSync(TOOLS_DIR).sort()) {
   if (file === "mcp-registry.ts" || file === "figma-registry.ts") continue;
 
   const content = readFileSync(join(TOOLS_DIR, file), "utf8");
-  if (content.includes("export const mcpTools") || content.includes("export const figmaHandlers")) {
-    modules.push(file.replace(".ts", ""));
-  }
+  const name = file.replace(".ts", "");
+  if (content.includes("export const mcpTools")) mcpModules.push(name);
+  if (content.includes("export const figmaHandlers")) figmaModules.push(name);
 }
 
-console.error(`[codegen] Found ${modules.length} tool modules: ${modules.join(", ")}`);
+const modules = [...new Set([...mcpModules, ...figmaModules])];
+console.error(`[codegen] Found ${modules.length} tool modules (${mcpModules.length} MCP, ${figmaModules.length} Figma): ${modules.join(", ")}`);
 
 // Camel-case helper: "create-frame" → "createFrame"
 function camel(name: string): string {
@@ -38,11 +40,11 @@ function camel(name: string): string {
 
 // ─── Generate MCP Registry ──────────────────────────────────────
 
-const mcpImports = modules
+const mcpImports = mcpModules
   .map((m) => `import { mcpTools as ${camel(m)}Tools } from "./${m}";`)
   .join("\n");
 
-const mcpSpreads = modules
+const mcpSpreads = mcpModules
   .map((m) => `  ...${camel(m)}Tools,`)
   .join("\n");
 
@@ -98,11 +100,11 @@ export function registerAllTools(server: McpServer, sendCommand: SendCommandFn) 
 
 // ─── Generate Figma Registry ────────────────────────────────────
 
-const figmaImports = modules
+const figmaImports = figmaModules
   .map((m) => `import { figmaHandlers as ${camel(m)}Handlers } from "./${m}";`)
   .join("\n");
 
-const figmaSpreads = modules
+const figmaSpreads = figmaModules
   .map((m) => `  ...${camel(m)}Handlers,`)
   .join("\n");
 

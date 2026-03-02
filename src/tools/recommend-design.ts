@@ -104,4 +104,3 @@ export const mcpTools: ToolDefinition[] = [
   },
 ];
 
-export const figmaHandlers: Record<string, (params: any) => Promise<any>> = {};
