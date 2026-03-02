@@ -60,11 +60,10 @@ with open('$config_file', 'w') as f: json.dump(d, f, indent=2)
 echo ""
 echo "Configuring MCP server..."
 
-# Claude Code (global config)
-if [ -f "$HOME/.claude.json" ]; then
-  configure_mcp "$HOME/.claude.json" "Claude Code"
-else
-  echo "  Claude Code: no config found, skipping"
+# Claude Code — write to both config locations for full compatibility
+configure_mcp "$HOME/.claude.json" "Claude Code (~/.claude.json)"
+if [ -d "$HOME/.claude" ]; then
+  configure_mcp "$HOME/.claude/settings.json" "Claude Code (~/.claude/settings.json)"
 fi
 
 # Cursor (global config)

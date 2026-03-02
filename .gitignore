@@ -9,6 +9,7 @@ certs/
 plans/
 .DS_Store
 .npmrc
+.mcp.json
 src/.DS_Store
 __pycache__
 src/.DS_Store
