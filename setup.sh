@@ -6,7 +6,7 @@ set -euo pipefail
 REPO="bienhoang/vibe-designing"
 INSTALL_DIR="$HOME/vibe-designing"
 API_URL="https://api.github.com/repos/$REPO/releases/latest"
-MCP_ENTRY="{\"command\":\"node\",\"args\":[\"$INSTALL_DIR/dist/mcp.js\"]}"
+MCP_ENTRY="{\"command\":\"node\",\"args\":[\"$INSTALL_DIR/dist/mcp.cjs\"]}"
 
 # --- Step 1: Download release ---
 echo "Fetching latest release..."
@@ -89,4 +89,5 @@ echo "  2. Select: $INSTALL_DIR/plugin/manifest.json"
 echo "  3. Open your AI tool and start designing"
 echo ""
 echo "Test connection:"
-echo '  Call join_channel, then ping — you should get back "pong"'
+echo '  Ask your AI: "Use the join_channel tool, then use the ping tool"'
+echo '  You should get back "pong" with your Figma document name.'

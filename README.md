@@ -92,7 +92,7 @@ If the setup script didn't detect your AI tool, add this to your MCP config (e.g
   "mcpServers": {
     "Vibe Designing": {
       "command": "node",
-      "args": ["~/vibe-designing/dist/mcp.js"]
+      "args": ["~/vibe-designing/dist/mcp.cjs"]
     }
   }
 }
@@ -135,7 +135,7 @@ Add to your MCP config (e.g. `.cursor/mcp.json`, `.claude.json`, or `.mcp.json`)
   "mcpServers": {
     "Vibe Designing": {
       "command": "node",
-      "args": ["/absolute/path/to/vibe-designing/dist/mcp.js"]
+      "args": ["/absolute/path/to/vibe-designing/dist/mcp.cjs"]
     }
   }
 }
@@ -173,8 +173,8 @@ If the auto-selected port differs from the default (3055), update the **port fie
 ### Connect
 
 1. In the Figma plugin, click **Connect** (channel defaults to `vibe-designing`)
-2. In your AI tool, call any design tool — the MCP server auto-joins the default channel
-3. Call `ping` to verify — you should get back `pong` with your document name
+2. In your AI tool, ask: **"Use the ping tool"** — the MCP server auto-joins the default channel
+3. You should get back `pong` with your Figma document name
 
 > **Custom channel?** Call `join_channel` with a different name before other tools. The Figma plugin channel name must match.
 
@@ -242,7 +242,7 @@ If the user needs a specific port, pass `--port=<port>` in the MCP config args.
 
 After the user opens the Figma plugin, it should automatically show **Connected** on the default port (3055). If the MCP server auto-selected a different port, the user will need to update the port in the plugin UI and click Connect.
 
-1. Call `ping`. The MCP server auto-joins the default channel (`vibe-designing`) on first tool call.
+1. Use the `ping` MCP tool. The MCP server auto-joins the default channel (`vibe-designing`) on first tool call.
 2. Expected response: `{ status: "pong", documentName: "...", currentPage: "...", timestamp: ... }`
 
 If `ping` returns a `pong` with a document name, the full chain is verified. Proceed with design tasks. Only call `join_channel` if the user specifies a custom channel name.

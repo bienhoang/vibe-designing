@@ -21,9 +21,9 @@
     "vibe-coding"
   ],
   "module": "dist/mcp.js",
-  "main": "dist/mcp.js",
+  "main": "dist/mcp.cjs",
   "bin": {
-    "vibe-designing": "dist/mcp.js"
+    "vibe-designing": "dist/mcp.cjs"
   },
   "files": [
     "dist",
