@@ -75,7 +75,7 @@ curl -fsSL https://raw.githubusercontent.com/bienhoang/vibe-designing/main/setup
 ```
 
 This will:
-1. Download the latest plugin to `~/vibe-designing/plugin/`
+1. Download the Figma plugin and MCP server to `~/vibe-designing/`
 2. Auto-configure the MCP server in detected AI tools (Claude Code, Cursor, Windsurf)
 
 After running, import the plugin in Figma: **Plugins > Development > Import plugin from manifest...** and select the `manifest.json` path shown in the terminal output.
@@ -91,14 +91,14 @@ If the setup script didn't detect your AI tool, add this to your MCP config (e.g
 {
   "mcpServers": {
     "Vibe Designing": {
-      "command": "npx",
-      "args": ["-y", "@bienhoang/vibe-designing"]
+      "command": "node",
+      "args": ["~/vibe-designing/dist/mcp.js"]
     }
   }
 }
 ```
 
-To use a specific port: add `"--port=3056"` to the `args` array.
+To use a specific port: add `"--port=3056"` to the `args` array. Replace `~` with your actual home directory path.
 
 </details>
 
@@ -220,19 +220,17 @@ If using Claude Code, the `channel_info` MCP tool returns the same data without 
 
 The section below is for AI agents setting up Vibe Designing on behalf of a user. Follow these steps in order.
 
-#### Plugin download
+#### Setup
 
-Run the setup script to download and extract the plugin automatically:
+Run the setup script to download the plugin and MCP server automatically:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/bienhoang/vibe-designing/main/setup.sh | bash
 ```
 
-Or with npx: `npx @bienhoang/vibe-designing --setup`
+This installs everything to `~/vibe-designing/` and configures MCP in detected AI tools. Tell the user the full path to `manifest.json` so they can import it in Figma.
 
-Tell the user the full path to the `manifest.json` so they can import it in Figma.
-
-If both methods fail, download the latest **vibe-designing-plugin** zip from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases), unzip to `~/vibe-designing/plugin/`, and tell the user the path.
+If the script fails, download the latest zip from [GitHub Releases](https://github.com/bienhoang/vibe-designing/releases), unzip to `~/vibe-designing/`, and tell the user the path.
 
 #### Port resolution
 

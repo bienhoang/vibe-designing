@@ -4,32 +4,32 @@
 set -euo pipefail
 
 REPO="bienhoang/vibe-designing"
-PLUGIN_DIR="$HOME/vibe-designing/plugin"
+INSTALL_DIR="$HOME/vibe-designing"
 API_URL="https://api.github.com/repos/$REPO/releases/latest"
-MCP_ENTRY='{"command":"npx","args":["-y","@bienhoang/vibe-designing"]}'
+MCP_ENTRY="{\"command\":\"node\",\"args\":[\"$INSTALL_DIR/dist/mcp.js\"]}"
 
-# --- Step 1: Download plugin ---
+# --- Step 1: Download release ---
 echo "Fetching latest release..."
 RELEASE_JSON=$(curl -fsSL -H "User-Agent: vibe-designing-setup" "$API_URL")
 
-ZIP_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url":\s*"[^"]*plugin[^"]*\.zip"' | head -1 | grep -o 'https://[^"]*')
+ZIP_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url":\s*"[^"]*\.zip"' | head -1 | grep -o 'https://[^"]*')
 TAG=$(echo "$RELEASE_JSON" | grep -o '"tag_name":\s*"[^"]*"' | head -1 | grep -o '"[^"]*"$' | tr -d '"')
 
 if [ -z "$ZIP_URL" ]; then
-  echo "Error: No plugin zip found in release $TAG"
+  echo "Error: No zip found in release $TAG"
   echo "Manual download: https://github.com/$REPO/releases/latest"
   exit 1
 fi
 
-echo "Downloading plugin ($TAG)..."
-TMP_ZIP=$(mktemp /tmp/vibe-designing-plugin-XXXXXX.zip)
+echo "Downloading ($TAG)..."
+TMP_ZIP=$(mktemp /tmp/vibe-designing-XXXXXX.zip)
 curl -fsSL -o "$TMP_ZIP" "$ZIP_URL"
 
-mkdir -p "$PLUGIN_DIR"
-unzip -o "$TMP_ZIP" -d "$PLUGIN_DIR" > /dev/null
+mkdir -p "$INSTALL_DIR"
+unzip -o "$TMP_ZIP" -d "$INSTALL_DIR" > /dev/null
 rm -f "$TMP_ZIP"
 
-echo "Plugin installed to: $PLUGIN_DIR"
+echo "Installed to: $INSTALL_DIR"
 
 # --- Step 2: Configure MCP for AI tools ---
 # Inject MCP server config into detected AI tools using python3 for JSON manipulation.
@@ -43,18 +43,7 @@ configure_mcp() {
     echo '{}' > "$config_file"
   fi
 
-  # Check if already configured
-  if python3 -c "
-import json, sys
-with open('$config_file') as f: d = json.load(f)
-servers = d.get('mcpServers', {})
-sys.exit(0 if 'Vibe Designing' in servers else 1)
-" 2>/dev/null; then
-    echo "  $display_name: already configured"
-    return
-  fi
-
-  # Add MCP server entry
+  # Always update MCP entry to ensure correct path
   if python3 -c "
 import json
 with open('$config_file') as f: d = json.load(f)
@@ -96,7 +85,7 @@ echo "Setup complete! ($TAG)"
 echo ""
 echo "Next steps:"
 echo "  1. In Figma: Plugins > Development > Import plugin from manifest..."
-echo "  2. Select: $PLUGIN_DIR/manifest.json"
+echo "  2. Select: $INSTALL_DIR/plugin/manifest.json"
 echo "  3. Open your AI tool and start designing"
 echo ""
 echo "Test connection:"
