@@ -44,7 +44,7 @@
     "pub:release": "npm run build && npm publish"
   },
   "devDependencies": {
-    "@figma/plugin-typings": "^1.123.0",
+    "@figma/plugin-typings": "^1.124.0",
     "@types/node": "^25.3.2",
     "@types/ws": "^8.18.1",
     "tsup": "^8.5.1",
