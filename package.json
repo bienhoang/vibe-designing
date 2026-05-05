@@ -55,6 +55,6 @@
     "@modelcontextprotocol/sdk": "1.27.1",
     "uuid": "latest",
     "ws": "latest",
-    "zod": "4.3.6"
+    "zod": "4.4.3"
   }
 }
